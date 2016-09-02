@@ -96,8 +96,8 @@ class ScriptAry
 		switch ($ext)
 		{
 			case 'plg':
-				$this->ext_full_name = $ext . '_' . $this->ext_group . '_' . $this->ext_name;
 				$this->ext_name = substr($this->ext_name, strlen($this->ext_group));
+				$this->ext_full_name = $ext . '_' . $this->ext_group . '_' . $this->ext_name;
 				break;
 			case 'mod':
 			case 'com':
@@ -151,7 +151,15 @@ class ScriptAry
 					JFile::delete($files);
 				}
 			}
+
+			$extensionTable = JTable::getInstance('extension');
+			// Find plugin id, in my case it was plg_ajax_ajaxhelpary
+			$pluginId = $extensionTable->find( array('element' => $this->ext_name, 'type' => 'plugin') );
+			$extensionTable->load($pluginId);
+			$this->messages[] = JText::_('JOPTIONS').': <a class="menu-'.$this->ext_name.' " href="index.php?option=com_plugins&task=plugin.edit&extension_id='.$pluginId.'">'.JText::_($this->ext_full_name).'</a>';
 		}
+
+
 
 		if (!empty($this->messages))
 		{

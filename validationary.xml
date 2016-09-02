@@ -7,7 +7,7 @@
 	<creationDate>2016-09-02</creationDate>
 	<copyright>Copyright (C) 2004-2016 Gruz All rights reserved.</copyright>
 	<license>GNU General Public License</license>
-	<version>0.0.1</version>
+	<version>0.0.2</version>
 	<description>PLG_SYSTEM_VALIDATIONARY_FIELD_DESC</description>
 	<files>
 		
@@ -32,7 +32,6 @@
 
 			<field name="form-settings-group" type="subform" formsource="plugins/system/validationary/form/form.xml" multiple="true" groupByFieldset="true" layout="joomla.form.field.subform.repeatable-table" label="" min="1" max="99999"/>
 
-				<field name="title" type="text" label="PLG_SYSTEM_VALIDATIONARY_FORM_TITLE" description="PLG_SYSTEM_VALIDATIONARY_FORM_TITLE_DESC"/>
 			</fieldset>
 		</fields>
 	</config>

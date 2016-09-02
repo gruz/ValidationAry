@@ -2,10 +2,10 @@
 /**
  * A wrapper class to extend common joomla class with GJFields methods
  *
- * @package		GJFields
- * @author Gruz <arygroup@gmail.com>
- * @copyright	Copyleft - All rights reversed
- * @license GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
+ * @package    GJFields
+ * @author     Gruz <arygroup@gmail.com>
+ * @copyright  Copyleft (є) 2016 - All rights reversed
+ * @license    GNU/GPLv3 http://www.gnu.org/licenses/gpl-3.0.html
  */
 
 // No direct access
@@ -15,28 +15,47 @@ require_once dirname(__FILE__) . '/vendor/autoload.php';
 
 use MatthiasMullie\Minify;
 
-class JPluginGJFields extends JPlugin {
+/**
+ * Short desc
+ *
+ * @author  Gruz <arygroup@gmail.com>
+ * @since   0.0.1
+ */
+class JPluginGJFields extends JPlugin
+{
+	static public $debug;
 
-	static $debug;
-
-	function __construct(&$subject, $config) {
+	/**
+	 * Constructor.
+	 *
+	 * @param   object  &$subject  The object to observe
+	 * @param   array   $config    An optional associative array of configuration settings.
+	 *
+	 * @since   1.6
+	 */
+	public function __construct(&$subject, $config)
+	{
 		parent::__construct($subject, $config);
 		$jinput = JFactory::getApplication()->input;
-		if ($jinput->get('option',null) == 'com_dump') { return; }
 
+		if ($jinput->get('option', null) == 'com_dump')
+		{
+			return;
+		}
 
 		// Load languge for frontend
 		$this->plg_name = $config['name'];
 		$this->plg_type = $config['type'];
-		$this->plg_full_name = 'plg_'.$config['type'].'_'.$config['name'];
-		$this->langShortCode = null;//is used for building joomfish links
+		$this->plg_full_name = 'plg_' . $config['type'] . '_' . $config['name'];
+
+		// Is used for building joomfish links
+		$this->langShortCode = null;
 		$this->default_lang = JComponentHelper::getParams('com_languages')->get('site');
 		$language = JFactory::getLanguage();
-		$this->plg_path = JPATH_PLUGINS.'/'.$this->plg_type.'/'.$this->plg_name.'/';
+		$this->plg_path = JPATH_PLUGINS . '/' . $this->plg_type . '/' . $this->plg_name . '/';
 
 		$language->load($this->plg_full_name, $this->plg_path, 'en-GB', true);
 		$language->load($this->plg_full_name, $this->plg_path, $this->default_lang, true);
-
 	}
 
 	/**
@@ -51,33 +70,32 @@ class JPluginGJFields extends JPlugin {
 	 * some flags to the session.
 	 * After the redirect I get the flags from the session, clear the session not to run the plugin twice and run the main function body.
 	 *
-	 * @author Gruz <arygroup@gmail.com>
-	 * @param	type	$name	Description
-	 * @return	type			Description
+	 * @return	void
 	 */
 	protected function _preparePluginHasBeenSavedOrAppliedFlag ()
 	{
 		$jinput = JFactory::getApplication()->input;
-		if ($jinput->get('option',null) == 'com_dump')
+
+		if ($jinput->get('option', null) == 'com_dump')
 		{
 			return;
 		}
 
-		//CHECK IF THE PLUGIN WAS JUST SAVED AND STORE A FLAG TO SESSION
+		// CHECK IF THE PLUGIN WAS JUST SAVED AND STORE A FLAG TO SESSION
 		$jinput = JFactory::getApplication()->input;
 		$this->pluginHasBeenSavedOrApplied = false;
 
 		$session = JFactory::getSession();
-		$option = $jinput->get('option',null);
-		$task = $jinput->get('task',null);
+		$option = $jinput->get('option', null);
+		$task = $jinput->get('task', null);
 
-		if ($option == 'com_plugins' && in_array ($task,array('plugin.save','plugin.apply')))
+		if ($option == 'com_plugins' && in_array($task, array('plugin.save','plugin.apply')))
 		{
 			// If the plugin which is saved is our current plugin and it's enabled
 			$session = JFactory::getSession();
-			$jform = $jinput->post->get('jform',null,'array');
+			$jform = $jinput->post->get('jform', null, 'array');
 
-			if(isset($jform['element']) && $jform['element'] == $this->plg_name && isset($jform['folder']) && $jform['folder'] == $this->plg_type)
+			if (isset($jform['element']) && $jform['element'] == $this->plg_name && isset($jform['folder']) && $jform['folder'] == $this->plg_type)
 			{
 				if ($jform['enabled'] == '0')
 				{
@@ -93,15 +111,16 @@ class JPluginGJFields extends JPlugin {
 		}
 		else
 		{
-			$sessionInfo = $session->get($this->plg_full_name,array());
+			$sessionInfo = $session->get($this->plg_full_name, array());
 			$session->clear($this->plg_full_name);
 
-			 // If we do not have to run plugin - joomla is not saving the plugin
+			// If we do not have to run plugin - joomla is not saving the plugin
 			if (empty($sessionInfo) || empty($sessionInfo->runPlugin))
 			{
 				return;
 			}
-			else {
+			else
+			{
 				$this->pluginHasBeenSavedOrApplied = $sessionInfo->runPlugin;
 			}
 		}
@@ -116,58 +135,67 @@ class JPluginGJFields extends JPlugin {
 	 */
 	public function getDefaultAddtion($addition)
 	{
-		$addition = explode(';$',$addition);
+		$addition = explode(';$', $addition);
 		$text = '';
 
-		if (file_exists(JPATH_SITE.'/'.$addition[0]) && isset($addition[1]))
+		if (file_exists(JPATH_SITE . '/' . $addition[0]) && isset($addition[1]))
 		{
-			require JPATH_SITE.'/'.$addition[0];
+			require JPATH_SITE . '/' . $addition[0];
 			$additionVar = $$addition[1];
 
-			if (!is_array($additionVar)) {
+			if (!is_array($additionVar))
+			{
 				$text = $additionVar;
 			}
 			else
 			{
-				$text = implode('',$additionVar);
+				$text = implode('', $additionVar);
 			}
 		}
+
 		return $text;
 	}
 
 	/**
 	 * Parses parameters of gjfileds (variablefileds) into a convinient arrays
 	 *
-	 * @author Gruz <arygroup@gmail.com>
-	 * @param	string	$group_name	Name of the group in the XML file
-	 * @return	type			Description
+	 * @param   string  $group_name  Name of the group in the XML file
+	 *
+	 * @return   type  Description
 	 */
-	function getGroupParams ($group_name) {
+	public function getGroupParams ($group_name)
+	{
 		$jinput = JFactory::getApplication()->input;
-		if ($jinput->get('option',null) == 'com_dump') { return; }
 
-		if (!isset($GLOBALS[$this->plg_name]['variable_group_name'][$group_name])) {
+		if ($jinput->get('option', null) == 'com_dump')
+		{
+			return;
+		}
+
+		if (!isset($GLOBALS[$this->plg_name]['variable_group_name'][$group_name]))
+		{
 			$GLOBALS[$this->plg_name]['variable_group_name'][$group_name] = true;
 		}
-		else {
+		else
+		{
 			return;
 		}
 
 		// Get defauls values from XML {
 		$group_name_start = $group_name;
-		$group_name_end = str_replace('{','',$group_name).'}';
-		$xmlfile = $this->plg_path.'/'.$this->plg_name.'.xml';
+		$group_name_end = str_replace('{', '', $group_name) . '}';
+		$xmlfile = $this->plg_path . '/' . $this->plg_name . '.xml';
 		$xml = simplexml_load_file($xmlfile);
-		//unset ($xml->scriptfile);
+
 		$field = 'field';
 		$xpath = 'config/fields/fieldset';
 
 		$started = false;
 		$defaults = array();
 
-		foreach ($xml->xpath('//'.$xpath.'/'.$field) as $f)
+		foreach ($xml->xpath('//' . $xpath . '/' . $field) as $f)
 		{
-			$field_name = (string)$f['name'];
+			$field_name = (string) $f['name'];
 
 			if ($field_name == $group_name_start)
 			{
@@ -185,14 +213,13 @@ class JPluginGJFields extends JPlugin {
 				continue;
 			}
 
-
 			$defaults[$field_name] = '';
 
-			$def = (string)$f['default'];
+			$def = (string) $f['default'];
 
 			if (!empty($f['defaultAddition']))
 			{
-				$def .= $this->getDefaultAddtion((string)$f['defaultAddition']);
+				$def .= $this->getDefaultAddtion((string) $f['defaultAddition']);
 			}
 
 			if (!empty($def))
@@ -203,6 +230,7 @@ class JPluginGJFields extends JPlugin {
 			{
 				$defaults[$field_name] = $def;
 			}
+
 			if ($field_name == $group_name_end)
 			{
 				break;
@@ -234,17 +262,18 @@ class JPluginGJFields extends JPlugin {
 
 		$pparams_temp  = $params->{$group_name};
 
-		foreach ($pparams_temp as $fieldname=>$values) {
+		foreach ($pparams_temp as $fieldname => $values)
+		{
 			$group_number = 0;
 			$values = (array) $values;
 
-			foreach ($values as $n=>$value)
+			foreach ($values as $n => $value)
 			{
-				if ($value == 'variablefield::'.$group_name)
+				if ($value == 'variablefield::' . $group_name)
 				{
 					$group_number++;
 				}
-				elseif (is_array($value) && $value[0] == 'variablefield::'.$group_name)
+				elseif (is_array($value) && $value[0] == 'variablefield::' . $group_name)
 				{
 					if (!isset($pparams[$group_number][$fieldname]))
 					{
@@ -272,9 +301,9 @@ class JPluginGJFields extends JPlugin {
 		}
 
 		// Update params with default values if there are no stored in the DB. Usefull when adding a new XML field and a user don't resave settings {
-		foreach ($pparams as $param_key=>$param)
+		foreach ($pparams as $param_key => $param)
 		{
-			foreach ($defaults as $k=>$v)
+			foreach ($defaults as $k => $v)
 			{
 				if (!isset($param[$k]))
 				{
@@ -386,41 +415,86 @@ class JPluginGJFields extends JPlugin {
 	 * @author Gruz <arygroup@gmail.com>
 	 * @return	bool			true if currentrly editing current plugin, false - if another plugin view
 	 */
-
-	function checkIfNowIsCurrentPluginEditWindow() {
+	public function checkIfNowIsCurrentPluginEditWindow()
+	{
 		$jinput = JFactory::getApplication()->input;
 
-		$option = $jinput->get('option',null);
-		if ($option !== 'com_plugins') { return false; }
-		$view = $jinput->get('view',null);
-		$layout = $jinput->get('layout',null);
-		$current_extension_id = $jinput->get('extension_id',null);
-		if ($view == 'plugin' && $layout == 'edit') { // Means we are editing a plugin
+		$option = $jinput->get('option', null);
+
+		if ($option !== 'com_plugins')
+		{
+			return false;
+		}
+
+		$view = $jinput->get('view', null);
+		$layout = $jinput->get('layout', null);
+		$current_extension_id = $jinput->get('extension_id', null);
+
+		// Means we are editing a plugin
+		if ($view == 'plugin' && $layout == 'edit')
+		{
 			$db = JFactory::getDBO();
-			$db->setQuery('SELECT extension_id FROM #__extensions WHERE type ='.$db->quote('plugin'). ' AND element = '. $db->quote($this->plg_name).' AND folder = '.$db->quote($this->plg_type));
+			$db->setQuery('SELECT extension_id FROM #__extensions WHERE type ='
+				. $db->quote('plugin') . ' AND element = '
+				. $db->quote($this->plg_name)
+				. ' AND folder = ' . $db->quote($this->plg_type)
+			);
 			$extension_id = $db->loadResult();
-			if ($current_extension_id == $extension_id) {
+
+			if ($current_extension_id == $extension_id)
+			{
 				return true;
 			}
 		}
+
 		return false;
 	}
 
-	function checkIfAPluginPublished ($plugin_group,$plugin_name, $show_message = true) {
+	/**
+	 * Checks if plugin is published
+	 *
+	 * @param   string  $plugin_group  Plugin group
+	 * @param   string  $plugin_name   Plugin name
+	 * @param   bool    $show_message  If to show message
+	 *
+	 * @return   type  Description
+	 */
+	public function checkIfAPluginPublished ($plugin_group, $plugin_name, $show_message = true)
+	{
 		$plugin_state = JPluginHelper::getPlugin($plugin_group, $plugin_name);
 
-		if (!$plugin_state) {
-			if ($show_message) {
+		if (!$plugin_state)
+		{
+			if ($show_message)
+			{
 				$db = JFactory::getDBO();
-				$db->setQuery('SELECT name FROM #__extensions WHERE type ='.$db->quote('plugin'). ' AND element = '. $db->quote($plugin_name).' AND folder = '.$db->quote($plugin_group));
+				$db->setQuery('SELECT name FROM #__extensions WHERE type ='
+					. $db->quote('plugin')
+					. ' AND element = ' . $db->quote($plugin_name)
+					. ' AND folder = ' . $db->quote($plugin_group)
+				);
 				$name = $db->loadResult();
 				$plugin_name = JText::_($name);
 				$application = JFactory::getApplication();
-				$application->enqueueMessage(JText::sprintf('LIB_GJFIELDS_PLUGIN_NOT_PUBLISHED',$plugin_name,$plugin_group,$plugin_name,$plugin_name,$plugin_group), 'error');
+				$application->enqueueMessage(
+					JText::sprintf(
+						'LIB_GJFIELDS_PLUGIN_NOT_PUBLISHED',
+						$plugin_name,
+						$plugin_group,
+						$plugin_name,
+						$plugin_name,
+						$plugin_group
+					),
+					'error'
+				);
 			}
+
 			return false;
 		}
-		else {return true;}
+		else
+		{
+			return true;
+		}
 	}
 
 	/**
@@ -452,7 +526,8 @@ class JPluginGJFields extends JPlugin {
 		// Just in case the web-site is not in the root of the domain name, like localhost/noble/index.php
 		if (!empty(JUri::base(true)))
 		{
-			$file_path = str_replace(JPATH_ROOT . '/' . JUri::base(true), JPATH_ROOT . '/', $file_path);
+			$file_path = JPath::clean(str_replace(JPATH_ROOT . '/' . JUri::base(true), JPATH_ROOT . '/', $file_path));
+			$url = JPath::clean(JUri::base(true) . '/' . $url);
 		}
 
 		// If the file is a local one, then add it's md5_file hash to the link
@@ -466,19 +541,19 @@ class JPluginGJFields extends JPlugin {
 
 		if ($regenrateMinified || $includeMinified)
 		{
-			$file_path_mnified = dirname($file_path) . '/'. basename($file_path, '.' . $type) . '.min.' . $type;
+			$file_path_mnified = dirname($file_path) . '/' . basename($file_path, '.' . $type) . '.min.' . $type;
 			$file_path_mnified = JPath::clean($file_path_mnified);
 
-			$url_minified = dirname($url) . '/'. basename($url, '.' . $type) . '.min.' . $type;
+			$url_minified = dirname($url) . '/' . basename($url, '.' . $type) . '.min.' . $type;
 			$url_minified = JPath::clean($url_minified);
 		}
 
 		if ($regenrateMinified || ($includeMinified && !JFile::exists($file_path_mnified) ))
 		{
-			$sourcePath = $file_path ;
+			$sourcePath = $file_path;
 			$minifier = new Minify\JS($sourcePath);
 
-			// save minified file to disk
+			// Save minified file to disk
 			$minifiedPath = $file_path_mnified;
 			$minifier->minify($minifiedPath);
 		}
@@ -494,6 +569,7 @@ class JPluginGJFields extends JPlugin {
 		}
 
 		$doc = JFactory::getDocument();
+
 		if ($type == 'js')
 		{
 			$doc->addScriptVersion($url);
@@ -526,7 +602,6 @@ class JPluginGJFields extends JPlugin {
 		JFactory::getApplication()->close();
 	}
 
-
 	/**
 	 * Used to replace core ajax token check
 	 *
@@ -537,7 +612,7 @@ class JPluginGJFields extends JPlugin {
 	 * function.
 	 * Usage: <code>Teach::checkToken('post');</code>
 	 *
-	 * @param   string   $method  Method of token data passed
+	 * @param   string  $method  Method of token data passed
 	 *
 	 * @return  void
 	 */
@@ -588,8 +663,4 @@ class JPluginGJFields extends JPlugin {
 			return false;
 		}
 	}
-
-
-
-
 }
