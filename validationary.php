@@ -12,22 +12,19 @@
 // No direct access
 defined('_JEXEC') or die;
 
-jimport('gjfields.gjfields');
 jimport('gjfields.helper.plugin');
 
 $latest_gjfields_needed_version = '1.1.18';
 
 $isOk = true;
 
-$error_msg = 'Install the latest GJFields plugin version <span style="color:black;">'
-	. __FILE__
-	. '</span>: <a href="http://www.gruz.org.ua/en/extensions/gjfields-sefl-reproducing-joomla-jform-fields.html">GJFields</a>';
-
 while (true)
 {
 	$isOk = false;
 
-	if (!class_exists('JPluginGJFields'))
+	$xml = JPATH_ROOT . '/libraries/gjfields/gjfields.xml';
+
+	if (!file_exists($xml))
 	{
 		$error_msg = 'Strange, but missing GJFields library for <span style="color:black;">'
 		. __FILE__ . '</span><br> The library should be installed together with the extension... Anyway, reinstall it:'
@@ -35,12 +32,14 @@ while (true)
 		break;
 	}
 
-	$gjfields_version = file_get_contents(JPATH_ROOT . '/libraries/gjfields/gjfields.xml');
+	$gjfields_version = file_get_contents($xml);
 	preg_match('~<version>(.*)</version>~Ui', $gjfields_version, $gjfields_version);
 	$gjfields_version = $gjfields_version[1];
 
 	if (version_compare($gjfields_version, $latest_gjfields_needed_version, '<'))
 	{
+		$error_msg = 'Install the latest GJFields plugin version <span style="color:black;">'
+			. __FILE__ . '</span>: <a href="http://www.gruz.org.ua/en/extensions/gjfields-sefl-reproducing-joomla-jform-fields.html">GJFields</a>';
 		break;
 	}
 
@@ -143,7 +142,7 @@ else
 				'continue' => true
 			);
 
-			$xml_to_load = $jinput->post->getCmd('xml_path', null);
+			$xml_to_load = $jinput->post->get('xml_path', null, 'raw');
 
 			if (empty($xml_to_load))
 			{
@@ -174,7 +173,7 @@ else
 			if (empty($xml_to_load))
 			{
 				$return['message'] = JText::_('PLG_SYSTEM_VALIDATIONARY_COULD_NOT_FIND_FORM_XML_TO_VALIDATE');
-				self::_JResponseJson($return, $return['message'], $taksFailed = !$return['continue']);
+				self::_JResponseJson($return, $return['message'], $taksFailed = true);
 			}
 
 			// Need to use this stupid construction, as JForm must be called with a parameter'
