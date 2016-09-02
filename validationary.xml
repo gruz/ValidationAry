@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension version="3.6" type="plugin" group="system" method="upgrade">
+	<name>plg_system_validationary</name>
+	<author>Gruz</author>
+	<authorEmail>arygroup@gmail.com</authorEmail>
+	<authorUrl>http://gruz.org.ua/extensions/validationary.html</authorUrl>
+	<creationDate>2016-09-02</creationDate>
+	<copyright>Copyright (C) 2004-2016 Gruz All rights reserved.</copyright>
+	<license>GNU General Public License</license>
+	<version>0.0.1</version>
+	<description>PLG_SYSTEM_VALIDATIONARY_FIELD_DESC</description>
+	<files>
+		
+		
+		
+		
+		
+		
+		
+		
+		
+	<folder>css</folder><folder>extensions</folder><folder>form</folder><folder>images</folder><folder>js</folder><folder>language</folder><folder>model</folder><filename>README.md</filename><filename>index.html</filename><filename>scriptary.php</filename><filename>scriptfile.php</filename><filename plugin="validationary">validationary.php</filename></files>
+	<config>
+
+		<fields name="params">
+			<fieldset name="basic" group="settings" label="JOPTIONS">
+
+			<field name="behavior" type="list" default="bootstrap2" label="PLG_SYSTEM_VALIDATIONARY_BEHAVIOR" description="PLG_SYSTEM_VALIDATIONARY_BEHAVIOR_DESC" class="span6">
+				<option value="bootstrap2">Bootstrap 2</option>
+				<option value="bootstrap3">Bootstrap 3</option>
+			</field>
+
+			<field name="form-settings-group" type="subform" formsource="plugins/system/validationary/form/form.xml" multiple="true" groupByFieldset="true" layout="joomla.form.field.subform.repeatable-table" label="" min="1" max="99999"/>
+
+				<field name="title" type="text" label="PLG_SYSTEM_VALIDATIONARY_FORM_TITLE" description="PLG_SYSTEM_VALIDATIONARY_FORM_TITLE_DESC"/>
+			</fieldset>
+		</fields>
+	</config>
+	
+<scriptfile>scriptfile.php</scriptfile><updateservers><servers type="extension" priority="1" name="validationary">http://gruz.org.ua/index.php?option=com_ars&amp;view=update&amp;task=stream&amp;format=xml&amp;id=24&amp;dummy=extension.xml</servers></updateservers></extension>
