@@ -94,6 +94,108 @@ else
 				';
 				$doc->addScriptDeclaration($js);
 			}
+
+			$rules = $this->params->get('form-settings-group', array());
+
+			if (empty($rules))
+			{
+				return;
+			}
+
+			$formsJQueryOptions = array();
+
+			foreach ($rules as $k => $rule)
+			{
+				if (JFactory::getApplication()->isAdmin() && $rule->scope == 'site')
+				{
+					continue;
+				}
+
+				if (!JFactory::getApplication()->isAdmin() && $rule->scope == 'admin')
+				{
+					continue;
+				}
+
+				$rule->form_selector = array_map('trim', explode(PHP_EOL, $rule->form_selector));
+				$rule->form_selector = implode(', ', $rule->form_selector);
+
+				$rule->fields_selector = array_map('trim', explode(PHP_EOL, $rule->fields_selector));
+				$rule->fields_selector = implode(', ', $rule->fields_selector);
+
+				$formsJQueryOptions[$rule->form_selector]['fields_selector'] = $rule->fields_selector;
+
+				if (empty($rule->xml_path))
+				{
+					$rule->xml_path = '';
+				}
+
+				$formsJQueryOptions[$rule->form_selector]['xml_path'] = $rule->xml_path;
+
+				$formsJQueryOptions[$rule->form_selector]['submit_button_enabled'] = (bool) $rule->submit_button_enabled;
+			}
+
+			if (empty($formsJQueryOptions))
+			{
+				return;
+			}
+
+			// We add ajax here because we don't need it if there is no form loaded
+			JHtml::_('jquery.framework');
+
+			$doc = JFactory::getDocument();
+			$doc->addScriptOptions($this->plg_name, array('forms' => $formsJQueryOptions ));
+
+			$url_ajax_plugin = JRoute::_(
+				// It's a must
+					JURI::base() . '?option=com_ajax&format=raw&'
+
+					// Pass token. Since ValidationAry posts the form itself, it has no sense.
+					// But what if we want to validate a single field?
+					. JSession::getFormToken() . '=1'
+
+					// $this->plg_type should contain your plugin group (system, content etc.),
+					// E.g. for a system plugin plg_system_menuary it should be system
+					. '&group=' . $this->plg_type
+
+					// The function from plugin you want to call
+
+					// The PHP functon must start from onAjax e.g. PlgSystemValidationAry::onAjaxValidate,
+					// while here we should use only after onAjax - `validate`
+					. '&plugin=validate'
+
+					// It's optional to add to the link. Just in case to ignore link result caching.
+					. '&uniq=' . uniqid()
+				);
+
+			// Below some optional stuff
+
+			// Since you want to use AJAX, you need a DOM element to place the response
+			// Here is an example how to place an ajax placeholder as a Joomla message
+
+			// $ajax_place = '<div id="my_ajax_place"></div>';
+			// JFactory::getApplication()->enqueueMessage($ajax_place, 'notice');
+
+			// Add the link to the HTML DOM to let later your ajax JS script get the link to call
+			// You'll be able to get the link in JS like <code>var link = Joomla.optionsStorage.ary.ajax_url;</code>
+
+			$doc->addScriptOptions($this->plg_name, array('ajax_url' => $url_ajax_plugin ));
+
+			$doc->addScriptOptions($this->plg_name, array('behavior' => $this->params->get('behavior', 'bootstrap2') ));
+
+			$doc->addScriptOptions(
+				$this->plg_name,
+				array(
+					'loading_snippet' => "<div class='center-block text-center'>"
+					. "<i aria-hidden='true' class='center-block text-center fa fa-spinner fa-spin '></i>"
+					. "</div>")
+			);
+
+			$path_to_assets = '/plugins/' . $this->plg_type . '/' . $this->plg_name . '/';
+
+			// ?h='.md5(dirname(__FILE__).'/js/ajax.js') makes sure that the JS is reloaded. After a plugin update Joomla may use browser cached JS or CSS.
+			// ~ $doc->addScript($path_to_assets . '/js/ajax.js?h=' . md5_file(dirname(__FILE__) . '/js/ajax.js'));
+			$this->_addJSorCSS($path_to_assets . '/js/ajax.js');
+			$this->_addJSorCSS($path_to_assets . '/css/validationary.css');
 		}
 
 		/**
@@ -310,128 +412,6 @@ else
 			}
 
 			self::_JResponseJson($return, $return['message'], $taksFailed = !$return['continue']);
-		}
-
-		/**
-		 * Override JForm XML
-		 *
-		 * @param   JForm  $form  The form to be altered.
-		 * @param   mixed  $data  The associated data for the form.
-		 *
-		 * @return  boolean
-		 *
-		 * @since	2.5
-		 */
-		public function onContentPrepareForm($form, $data)
-		{
-			// Check we have a form.
-			if (!($form instanceof JForm))
-			{
-				$this->_subject->setError('JERROR_NOT_A_FORM');
-
-				return false;
-			}
-
-			// We add ajax here because we don't need it if there is no form loaded
-			JHtml::_('jquery.framework');
-
-			$rules = $this->params->get('form-settings-group', array());
-
-			if (empty($rules))
-			{
-				return;
-			}
-
-			$formsJQueryOptions = array();
-
-			foreach ($rules as $k => $rule)
-			{
-				if (JFactory::getApplication()->isAdmin() && $rule->scope == 'site')
-				{
-					continue;
-				}
-
-				if (!JFactory::getApplication()->isAdmin() && $rule->scope == 'admin')
-				{
-					continue;
-				}
-
-				$rule->form_selector = array_map('trim', explode(PHP_EOL, $rule->form_selector));
-				$rule->form_selector = implode(', ', $rule->form_selector);
-
-				$rule->fields_selector = array_map('trim', explode(PHP_EOL, $rule->fields_selector));
-				$rule->fields_selector = implode(', ', $rule->fields_selector);
-
-				$formsJQueryOptions[$rule->form_selector]['fields_selector'] = $rule->fields_selector;
-
-				if (empty($rule->xml_path))
-				{
-					$rule->xml_path = '';
-				}
-
-				$formsJQueryOptions[$rule->form_selector]['xml_path'] = $rule->xml_path;
-
-				$formsJQueryOptions[$rule->form_selector]['submit_button_enabled'] = (bool) $rule->submit_button_enabled;
-			}
-
-			if (empty($formsJQueryOptions))
-			{
-				return;
-			}
-
-			$doc = JFactory::getDocument();
-			$doc->addScriptOptions($this->plg_name, array('forms' => $formsJQueryOptions ));
-
-			$url_ajax_plugin = JRoute::_(
-				// It's a must
-					JURI::base() . '?option=com_ajax&format=raw&'
-
-					// Pass token. Since ValidationAry posts the form itself, it has no sense.
-					// But what if we want to validate a single field?
-					. JSession::getFormToken() . '=1'
-
-					// $this->plg_type should contain your plugin group (system, content etc.),
-					// E.g. for a system plugin plg_system_menuary it should be system
-					. '&group=' . $this->plg_type
-
-					// The function from plugin you want to call
-
-					// The PHP functon must start from onAjax e.g. PlgSystemValidationAry::onAjaxValidate,
-					// while here we should use only after onAjax - `validate`
-					. '&plugin=validate'
-
-					// It's optional to add to the link. Just in case to ignore link result caching.
-					. '&uniq=' . uniqid()
-				);
-
-			// Below some optional stuff
-
-			// Since you want to use AJAX, you need a DOM element to place the response
-			// Here is an example how to place an ajax placeholder as a Joomla message
-
-			// $ajax_place = '<div id="my_ajax_place"></div>';
-			// JFactory::getApplication()->enqueueMessage($ajax_place, 'notice');
-
-			// Add the link to the HTML DOM to let later your ajax JS script get the link to call
-			// You'll be able to get the link in JS like <code>var link = Joomla.optionsStorage.ary.ajax_url;</code>
-			$doc->addScriptOptions($this->plg_name, array('ajax_url' => $url_ajax_plugin ));
-
-			$doc->addScriptOptions($this->plg_name, array('behavior' => $this->params->get('behavior', 'bootstrap2') ));
-
-			$doc->addScriptOptions(
-				$this->plg_name,
-				array(
-					'loading_snippet' => "<div class='center-block text-center'>"
-					. "<i aria-hidden='true' class='center-block text-center fa fa-spinner fa-spin '></i>"
-					. "</div>")
-			);
-
-			$path_to_assets = '/plugins/' . $this->plg_type . '/' . $this->plg_name . '/';
-
-			// ?h='.md5(dirname(__FILE__).'/js/ajax.js') makes sure that the JS is reloaded. After a plugin update Joomla may use browser cached JS or CSS.
-			// ~ $doc->addScript($path_to_assets . '/js/ajax.js?h=' . md5_file(dirname(__FILE__) . '/js/ajax.js'));
-			$this->_addJSorCSS($path_to_assets . '/js/ajax.js');
-			$this->_addJSorCSS($path_to_assets . '/css/validationary.css');
 		}
 
 		/**
