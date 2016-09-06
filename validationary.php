@@ -132,6 +132,7 @@ else
 				$formsJQueryOptions[$rule->form_selector]['xml_path'] = $rule->xml_path;
 
 				$formsJQueryOptions[$rule->form_selector]['submit_button_enabled'] = (bool) $rule->submit_button_enabled;
+				$formsJQueryOptions[$rule->form_selector]['useAlerts'] = (bool) $rule->useAlerts;
 			}
 
 			if (empty($formsJQueryOptions))
@@ -211,32 +212,23 @@ else
 
 			$post = JFactory::getApplication()->input->post;
 
-			$group = $jinput->post->getCmd('group', '');
-
-			// Get our fake model to be able to reuse JModelFrom::validate
-			JModelLegacy::addIncludePath(dirname(__FILE__) . '/model/');
-			$model = JModelLegacy::getInstance('Validate', 'ValidationAryModel');
+			$group = $jinput->post->getCmd('group', null);
 
 			$data = $jinput->post->get('jform', array(), 'array');
 
 			$field_to_validate = $post->get('field_to_validate', null, 'raw');
 
-			if (!empty($group))
-			{
-				$pattern = '~jform\[.*\]\[(.*)\]~Ui';
-			}
-			else
-			{
-				$pattern = '~jform\[(.*)\]~Ui';
-			}
+			// Normalize fields like jform[group][subgroup][subsubgroup][fieldname]
+			// to group.subgroup.subsubgroup.fieldname
+			$field_to_validate = str_replace('jform[', '', $field_to_validate);
+			$field_to_validate = str_replace('][', '.', $field_to_validate);
+			$field_to_validate = str_replace(']', '', $field_to_validate);
+			$field_to_validate = explode('.', $field_to_validate);
 
-			preg_match($pattern, $field_to_validate, $fieldNameToValidate);
-			$fieldNameToValidate = end($fieldNameToValidate);
-
-			if (empty($fieldNameToValidate))
-			{
-				$fieldNameToValidate = array($field_to_validate);
-			}
+			// Get from group.subgroup.subsubgroup.fieldname
+			// $group = group.subgroup.subsubgroup and $fieldNameToValidate = $field
+			$fieldNameToValidate = array_pop($field_to_validate);
+			$group = implode('.', $field_to_validate);
 
 			$return = array(
 				'message' => '',
@@ -244,44 +236,59 @@ else
 				'continue' => true
 			);
 
-			$xml_to_load = $jinput->post->get('xml_path', null, 'raw');
+			$xmls_to_load = $jinput->post->get('xml_path', null, 'raw');
 
-			if (empty($xml_to_load))
+			if (empty($xmls_to_load))
 			{
 				$form_option = $jinput->post->getCmd('form_option', null);
 				$form_task = $jinput->post->getCmd('form_task', null);
 
 				if (!empty($form_option) && !empty($form_task))
 				{
-					$xml_to_load = explode('.', $form_task);
-					$xml_to_load = $xml_to_load[0];
-					$xml_to_load = JPATH_ROOT . '/components/' . $form_option . '/models/forms/' . $xml_to_load . '.xml';
+					$xmls_to_load = explode('.', $form_task);
+					$xmls_to_load[] = JPATH_ROOT . '/components/' . $form_option . '/models/forms/' . $xmls_to_load[0] . '.xml';
 				}
 			}
-
-			if (!empty($xml_to_load))
+			else
 			{
-				if (!JFile::exists($xml_to_load))
-				{
-					$xml_to_load = JPATH_ROOT . '/' . $xml_to_load;
+				$xmls_to_load_temp = explode(PHP_EOL, $xmls_to_load);
+				$xmls_to_load = array();
 
-					if (!JFile::exists($xml_to_load))
+				foreach ($xmls_to_load_temp as $k => $fileOrPattern)
+				{
+					$fileOrPattern = trim(JPATH_ROOT . '/' . $fileOrPattern);
+
+					if (JFile::exists($fileOrPattern))
 					{
-						$xml_to_load = null;
+						$xmls_to_load[] = $fileOrPattern;
+					}
+					else
+					{
+						foreach (glob($fileOrPattern) as $filename)
+						{
+							if (JFile::exists($filename))
+							{
+								$xmls_to_load[] = $filename;
+							}
+						}
 					}
 				}
 			}
 
-			if (empty($xml_to_load))
+			if (empty($xmls_to_load))
 			{
 				$return['message'] = JText::_('PLG_SYSTEM_VALIDATIONARY_COULD_NOT_FIND_FORM_XML_TO_VALIDATE');
 				self::_JResponseJson($return, $return['message'], $taksFailed = true);
 			}
 
 			// Need to use this stupid construction, as JForm must be called with a parameter'
-			$form = new JForm($xml_to_load);
-			$form->addFormPath();
-			$form->loadFile($xml_to_load);
+			$form = new JForm($xmls_to_load[0]);
+
+			// $form->addFormPath();
+			foreach ($xmls_to_load as $k => $xml_to_load)
+			{
+				$form->loadFile($xml_to_load);
+			}
 
 			if (!$form)
 			{
@@ -291,14 +298,54 @@ else
 			}
 			else
 			{
-				$fieldsToPreserve = array($fieldNameToValidate);
+				$groupName = $group;
 
-				$field_to_validate = $form->getField($fieldNameToValidate);
+				if (empty($group))
+				{
+					$groupName = 'nogroup';
+				}
+
+				$fieldsToPreserve[$groupName][] = $fieldNameToValidate;
+
+				$field_to_validate = $form->getField($fieldNameToValidate, $group);
+
+				// To properly validate editing unique fields like email or username
+				// on editing existing records, we tell not to remove the id field used by email and username rules
+				$fieldsToPreserve[$groupName][] = 'id';
+
+				/* Do not remove, maybe will need to use.
+				$fieldUnique = $field_to_validate->getAttribute('unique');
+				$fieldType = $field_to_validate->getAttribute('type');
+				if ($fieldUnique)
+				{
+				}
+				*/
+
+				if (!$field_to_validate)
+				{
+					// Load sys language file
+					$this->default_lang = JComponentHelper::getParams('com_languages')->get('site');
+					$language = JFactory::getLanguage();
+					$this->plg_path = JPATH_PLUGINS . '/' . $this->plg_type . '/' . $this->plg_name . '/';
+
+					$language->load($this->plg_full_name . '.sys', $this->plg_path, 'en-GB', true);
+					$language->load($this->plg_full_name . '.sys', $this->plg_path, $this->default_lang, true);
+
+					// Message header
+					$return['message'] = JText::_('PLG_SYSTEM_VALIDATIONARY');
+
+					// JResponse handles Joomla messages. So we use it.
+					JFactory::getApplication()->enqueueMessage(JText::_('PLG_SYSTEM_VALIDATIONARY_FIELD_NOT_FOUND'), 'warning');
+					$return['type'] = 'warning';
+					$return['continue'] = false;
+					self::_JResponseJson($return, $return['message'], $taksFailed = !$return['continue']);
+				}
+
 				$validateRule = $field_to_validate->getAttribute('validate');
 
 				if ($validateRule == 'equals')
 				{
-					$fieldsToPreserve[] = $field_to_validate->getAttribute('field');
+					$fieldsToPreserve[$groupName][] = $field_to_validate->getAttribute('field');
 				}
 
 				// Find if there is another element which must be equal to the current one
@@ -329,11 +376,11 @@ else
 							$name = 'jform[' . $group . '][' . $field->getAttribute('name') . '][]';
 						}
 
-						$filedName = $field->getAttribute('name');
+						$fieldName = $field->getAttribute('name');
 
-						if (!in_array($filedName, $fieldsToPreserve))
+						if (!in_array($fieldName, $fieldsToPreserve[$groupName]))
 						{
-							$form->removeField($filedName);
+							$form->removeField($fieldName, $group);
 						}
 						// Try loading language
 						else
@@ -368,6 +415,12 @@ else
 						}
 					}
 				}
+
+				// Get our fake model to be able to reuse JModelFrom::validate
+				JModelLegacy::addIncludePath(dirname(__FILE__) . '/model/');
+				$model = JModelLegacy::getInstance('Validate', 'ValidationAryModel');
+
+				$form->bind($data);
 
 				// Test whether the data is valid.
 				$validData = $model->validate($form, $data, $group);

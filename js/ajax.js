@@ -43,6 +43,70 @@ jQuery(document).ready(function($){
 			// Not removed in purpose of possible future use
 			var useMessageUnderField = false;
 
+			var popoverPlacement;
+
+			switch (Joomla.optionsStorage.validationary.behavior)
+			{
+				case 'bootstrap3':
+					popoverPlacement = 'auto';
+					break;
+				default:
+					popoverPlacement = 'right';
+			}
+
+			/**
+			 * Restore original field state
+			 *
+			 * Removes error/invalid/valid classes,
+			 * tries to restore original popover
+			 *
+			 * @param  jQuery object   Field to be unvalidated
+			 *
+			 * @return   bool          void
+			 */
+			var makeFieldUntouched = function($this)
+			{
+				if (useMessageUnderField)
+				{
+					$response.html();
+				}
+
+				$this.removeClass('valid invalid error');
+
+				if ($this.hasClass('hasPopover') && $this.popoverWasChanged)
+				{
+						var $label = $this.parent().find('label');
+						if ($label.length < 0)
+						{
+							$this.popover();
+							return;
+						}
+
+						var opts = {
+							title: '',
+							placement: popoverPlacement,
+							trigger: 'hover',
+							html: 'true',
+						};
+
+						opts.title = $label.attr('title') || $label.data('original-title');
+
+						if (!opts.title || opts.title.length < 0)
+						{
+							return;
+						}
+						var tmp = opts.title.split('</strong><br />');
+						if (tmp.length > 1)
+						{
+							opts.title = tmp[0] + '</strong>';
+							opts.content = tmp[1];
+						}
+
+						$this.data('toggle', 'popover');
+						$this.popover(opts).popover();
+				}
+			};
+
 			/**
 			 * Either enables or disables submit button
 			 *
@@ -108,6 +172,8 @@ jQuery(document).ready(function($){
 
 				var $this = $element || $(this);
 
+				$this.popoverWasChanged = $this.popoverWasChanged || false;
+
 				if ($this.attr('name').indexOf("jform[") < 0) {
 					return;
 				}
@@ -119,12 +185,9 @@ jQuery(document).ready(function($){
 				}
 
 				// Do not run validation on empty field
-				if (!$this.val().length)
+				if (!$this.val().length && !$this.data('previous_value'))
 				{
-					if (useMessageUnderField)
-					{
-						$response.html();
-					}
+					makeFieldUntouched($this);
 					return;
 				}
 
@@ -207,6 +270,7 @@ jQuery(document).ready(function($){
 					{
 						$this.addClass('loading');
 						$this.popover('destroy');
+						$this.popoverWasChanged = true;
 					}
 
 					$this.removeClass('error');
@@ -249,31 +313,63 @@ jQuery(document).ready(function($){
 								{
 									var opts = {
 										title: message,
-										placement: 'auto',
+										placement: popoverPlacement,
 										trigger: 'hover',
 										html: 'true',
 									};
-									switch (Joomla.optionsStorage.validationary.behavior)
+
+									if (response.messages)
 									{
-										case 'bootstrap3':
-											opts.placement = 'auto';
-											break;
-										default:
-											opts.placement = 'right';
+										opts.content = '';
 
+										$.each(response.messages, function(type, msgs){
+											var alertsuffix = '';
+
+											// Convert Joomla BS 2 message types into BS 3
+											if (formOptions.useAlerts)
+											{
+													switch (Joomla.optionsStorage.validationary.behavior)
+													{
+														case 'bootstrap3':
+															switch (type)
+															{
+																case 'message':
+																	alertsuffix = '';
+																	break;
+																case 'notice':
+																	alertsuffix = 'info';
+																	break;
+																case 'warning':
+																	alertsuffix = 'warning';
+																	break;
+																case 'error':
+																	alertsuffix = 'danger';
+																	break;
+																default:
+															}
+															break;
+														default:
+															alertsuffix = type;
+													}
+											}
+
+											var classes = '';
+											if (alertsuffix.length)
+											{
+												classes = 'alert alert-' + alertsuffix;
+											}
+
+											opts.content = opts.content + '<div class="' + classes + '" role="alert"><ol><li>' + msgs.join('</li><li>') + '</li></ol></div>';
+										});
 									}
-
-									if (response.messages && response.messages.warning)
-									{
-										opts.content = '<ol><li>' + response.messages.warning.join('</li><li>') + '</li></ol>';
-									}
-
 									$this.data('toggle', 'popover');
 									$this.popover(opts).popover('show');
+									$this.popoverWasChanged = true;
 								}
 							}
 							else
 							{
+								makeFieldUntouched($this);
 								$this.addClass('valid');
 							}
 

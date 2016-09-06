@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <form>
 		<fieldset name="section1" label="">
-				<!--
 
 				<field name="title" type="text"
 					label="PLG_SYSTEM_VALIDATIONARY_FORM_TITLE"
 					description="PLG_SYSTEM_VALIDATIONARY_FORM_TITLE_DESC" />
+				<!--
 				-->
 
 				<field name="scope" type="list" default="1" label="PLG_SYSTEM_VALIDATIONARY_SCOPE" description="" class="span6">
@@ -15,6 +15,11 @@
 				</field>
 
 				<field name="submit_button_enabled" type="list" default="1" label="PLG_SYSTEM_VALIDATIONARY_SUBMIT_BUTTON_ENABLED" description="PLG_SYSTEM_VALIDATIONARY_SUBMIT_BUTTON_ENABLED_DESC" class="span6">
+					<option value="0">JNO</option>
+					<option value="1">JYES</option>
+				</field>
+
+				<field name="useAlerts" type="list" default="1" label="PLG_SYSTEM_VALIDATIONARY_USEALERTS" description="PLG_SYSTEM_VALIDATIONARY_USEALERTS_DESC" class="span6">
 					<option value="0">JNO</option>
 					<option value="1">JYES</option>
 				</field>
@@ -30,7 +35,7 @@
 		</fieldset>
 		<fieldset name="section2" label="">
 
-				<field name="xml_path" type="text"
+				<field name="xml_path" type="textarea"
 					class="span12"
 					label="PLG_SYSTEM_VALIDATIONARY_FORM_XML_PATH"
 					description="PLG_SYSTEM_VALIDATIONARY_FORM_XML_PATH_DESC" />
