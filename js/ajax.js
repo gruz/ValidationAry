@@ -276,6 +276,8 @@ jQuery(document).ready(function($){
 					$this.removeClass('error');
 					$this.removeClass('valid');
 
+					$submit.addClass('fa-spin');
+
 					// Make validation post
 					$.post(Joomla.optionsStorage.validationary.ajax_url,
 						form,
@@ -299,6 +301,8 @@ jQuery(document).ready(function($){
 							}
 
 							$this.removeClass('loading');
+							$submit.removeClass('fa-spin');
+
 							if (failed === true)
 							{
 								$this.addClass('error');
