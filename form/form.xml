@@ -19,13 +19,25 @@
 					<option value="1">JYES</option>
 				</field>
 
+
+				<field name="fontawesome"
+					showon="submit_button_enabled:0"
+					type="list"
+					default="included"
+					label="PLG_SYSTEM_VALIDATIONARY_FONTAWESOME"
+					description="PLG_SYSTEM_VALIDATIONARY_FONTAWESOME_DESC"
+					class="span6">
+					<option value="include">PLG_SYSTEM_VALIDATIONARY_INCLUDE</option>
+					<option value="included">PLG_SYSTEM_VALIDATIONARY_INCLUDED</option>
+					<option value="no">JNO</option>
+				</field>
+
 				<field name="useAlerts" type="list" default="1" label="PLG_SYSTEM_VALIDATIONARY_USEALERTS" description="PLG_SYSTEM_VALIDATIONARY_USEALERTS_DESC" class="span6">
 					<option value="0">JNO</option>
 					<option value="1">JYES</option>
 				</field>
 
 				<field name="form_selector" type="textarea"
-					showon="isenabled:1"
 					label="PLG_SYSTEM_VALIDATIONARY_FORM_SELECTOR"
 					description="PLG_SYSTEM_VALIDATIONARY_FORM_SELECTOR_DESC"
 					default="#member-registration"
@@ -40,12 +52,18 @@
 					label="PLG_SYSTEM_VALIDATIONARY_FORM_XML_PATH"
 					description="PLG_SYSTEM_VALIDATIONARY_FORM_XML_PATH_DESC" />
 
-				<field name="fields_selector" type="textarea"
-					showon="isenabled:1"
-					label="PLG_SYSTEM_VALIDATIONARY_FORM_FIELDS"
-					description="PLG_SYSTEM_VALIDATIONARY_FORM_FIELDS_DESC"
-					cols="80" rows="6" class="span12"
+				<field name="fields_selector_required" type="textarea"
+					label="PLG_SYSTEM_VALIDATIONARY_FORM_FIELDS_REQUIRED"
+					description="PLG_SYSTEM_VALIDATIONARY_FORM_FIELDS_REQUIRED_DESC"
+					cols="80" rows="5" class="span12"
 					default=".required"
+					/>
+
+				<field name="fields_selector_only_validate" type="textarea"
+					label="PLG_SYSTEM_VALIDATIONARY_FORM_FIELDS_ONLY_VALIDATE"
+					description="PLG_SYSTEM_VALIDATIONARY_FORM_FIELDS_ONLY_VALIDATE_DESC"
+					cols="80" rows="5" class="span12"
+					default=".ajax-validate"
 					/>
 
 		</fieldset>

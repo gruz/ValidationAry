@@ -1,6 +1,8 @@
 jQuery(document).ready(function($){
 
-// ~ console.log(Joomla.optionsStorage.validationary);
+	var debug = true;
+	var debug = false;
+if (debug) console.log(Joomla.optionsStorage.validationary);
 
 	// Object to share our data between JQuery blocks
 	$.validationary = $.validationary || {};
@@ -16,21 +18,39 @@ jQuery(document).ready(function($){
 	 */
 	$.validationary.validateAjax = function ($parent)
 	{
+if (debug) console.log(Joomla.optionsStorage.validationary.forms);
 		$.each(Joomla.optionsStorage.validationary.forms, function(formSelector, formOptions)
 		{
+if (debug) console.log(formSelector);
 			var $form = $($parent.find(formSelector));
 			if (!$form.length)
 			{
 				return;
 			}
+
+			if (!$form.hasClass('validationary'))
+			{
+				$form.addClass('validationary');
+			}
+			else
+			{
+				return;
+			}
+
+			formOptions.fields_selector = formOptions.fields_selector_required + ',' + formOptions.fields_selector_only_validate
 			var $fields = $form.find(formOptions.fields_selector).not('label').not('fieldset').not('div');
+
+			var $fields_required = $form.find(formOptions.fields_selector_required).not('label').not('fieldset').not('div');
+			$fields_required.data('required', true);
+			var $fields_only_validate = $form.find(formOptions.fields_selector_only_validate).not('label').not('fieldset').not('div');
+			$fields_only_validate.data('required', false);
 
 			if (!$fields.length)
 			{
 				return;
 			}
 
-			$form.addClass('validationary');
+			// $form.addClass('validationary');
 
 			var $submit = $($form.find('*[type="submit"]'));
 			var timer;
@@ -44,6 +64,24 @@ jQuery(document).ready(function($){
 			var useMessageUnderField = false;
 
 			var popoverPlacement;
+
+			var $fa = false;
+
+			switch (formOptions.fontawesome)
+			{
+				case 'include':
+				case 'included':
+					$fa = $($submit.find('.fa'));
+
+					if ($fa.length < 1)
+					{
+						$submit.prepend(Joomla.optionsStorage.validationary.loading_snippet_light);
+						$fa = $($submit.find('.fa'));
+					}
+					break;
+				default:
+					break;
+			}
 
 			switch (Joomla.optionsStorage.validationary.behavior)
 			{
@@ -71,7 +109,7 @@ jQuery(document).ready(function($){
 					$response.html();
 				}
 
-				$this.removeClass('valid invalid error');
+				$this.removeClass('valid invalid error loading');
 
 				if ($this.hasClass('hasPopover') && $this.popoverWasChanged)
 				{
@@ -103,8 +141,9 @@ jQuery(document).ready(function($){
 						}
 
 						$this.data('toggle', 'popover');
-						$this.popover(opts).popover();
+						$this.popover(opts).popover().popover('hide');
 				}
+				allowSubmit();
 			};
 
 			/**
@@ -124,14 +163,29 @@ jQuery(document).ready(function($){
 					return;
 				}
 
-				var required = $form.find(formOptions.fields_selector).not('label').not('fieldset').not('div').not('.valid');
-
+				// var required = $form.find(formOptions.fields_selector_required).not('label').not('fieldset').not('div').not('.valid');
+				var required = $form.find(formOptions.fields_selector_required + ',' + '.loading' + ',' + '.error').not('label').not('fieldset').not('div').not('.valid');
+if (debug) console.log(required);
 				if (required.length > 0)
 				{
 					$submit.attr("disabled", "disabled");
-					return;
+					if ($fa)
+					{
+						$fa.removeClass('fa-check-circle-o');
+						$fa.addClass('fa-close');
+					}
 				}
-				$submit.removeAttr("disabled");
+				else
+				{
+					$submit.removeAttr("disabled");
+					$fa.addClass('fa-check-circle-o');
+				}
+
+				if ($fa)
+				{
+					$fa.removeClass('fa-spin fa-spinner');
+				}
+
 			};
 
 
@@ -143,14 +197,13 @@ jQuery(document).ready(function($){
 			 */
 			var validateFields = function($elements)
 			{
-
 				for (i = 0; i < $elements.length; i++)
 				{
 					validateField(null, $($elements[i]));
-					continue;
+					// continue;
 				}
-				allowSubmit();
 
+				allowSubmit();
 			};
 
 			/**
@@ -166,33 +219,15 @@ jQuery(document).ready(function($){
 			 * @param   event          event     Event, just in case
 			 * @param   jQuery object  $element  Object being validated
 			 *
-			 * @return   Deferred object
+			 * @return   void
 			 */
 			var validateField = function (event, $element) {
 
 				var $this = $element || $(this);
 
-				$this.popoverWasChanged = $this.popoverWasChanged || false;
-
-				if ($this.attr('name').indexOf("jform[") < 0) {
-					return;
-				}
-				var $response;
-
-				if (useMessageUnderField)
-				{
-					$response = $this.parent().find(".response");
-				}
-
-				// Do not run validation on empty field
-				if (!$this.val().length && !$this.data('previous_value'))
-				{
-					makeFieldUntouched($this);
-					return;
-				}
-
 				// Do not run if nothing was changed in the field
 				var previous_value = $this.data('previous_value');
+
 				if (previous_value == $this.val())
 				{
 					return;
@@ -201,17 +236,61 @@ jQuery(document).ready(function($){
 				// Store field to later know if it was changed
 				$this.data('previous_value', $this.val());
 
+				// Abort running AJAX
+				var xhr = $this.data('xhr');
+
+				if (xhr)
+				{
+					xhr.abort();
+				}
+
+				$this.popoverWasChanged = $this.popoverWasChanged || false;
+
+				if ($this.attr('name').indexOf("jform[") < 0) {
+					return;
+				}
+
+				var $response;
+
+				if (useMessageUnderField)
+				{
+					$response = $this.parent().find(".response");
+				}
+
+				// Do not run validation on empty field
+				// ~ if (
+					// ~ (!$this.data('required') && !$this.val().length)
+					// ~ ||
+					// ~ ($this.data('required') && !$this.val().length && !$this.data('previous_value')))
+				// ~ {
+
+				// If value is set to nothing - make field as if it was before any change
+				// and update submit button state
+				if (!$this.val().length)
+				{
+					makeFieldUntouched($this);
+					allowSubmit();
+					return;
+				}
+
 				// Do not fire immediately
 				if (timer) {
 					if (event) {
 						clearTimeout(timer);
 					}
 				}
-				timer = setTimeout(function(){
 
-					// Remove from form unneeded option and task fields (otherwise
-					// the for uses them as a post target) and add needed for validation
-					// fields
+				timer = setTimeout(function(){
+					if (!$this.data('required') && !$this.val().length)
+					{
+						makeFieldUntouched($this);
+						allowSubmit();
+						return;
+					}
+
+					// Remove from the form unneeded `option` and `task` fields
+					// (otherwise the form uses them as a post target)
+					// and add needed for validation fields
 					var form = $form.serializeArray();
 					var form_task;
 					var form_option;
@@ -241,17 +320,6 @@ jQuery(document).ready(function($){
 							{name: "xml_path", value: formOptions.xml_path}
 					]);
 
-					// Get field state before the validation
-					var prevState;
-					if ($this.hasClass('error'))
-					{
-						prevState = 'error';
-					}
-					else if ($this.hasClass('valid'))
-					{
-						prevState = 'valid';
-					}
-
 					// Remove popover and response output
 					if (useMessageUnderField)
 					{
@@ -273,15 +341,24 @@ jQuery(document).ready(function($){
 						$this.popoverWasChanged = true;
 					}
 
-					$this.removeClass('error');
-					$this.removeClass('valid');
+					$this.removeClass('error valid');
+					// Set submit button to show the form is being validated
+					if ($fa)
+					{
+						$fa.addClass('fa-spin fa-spinner');
 
-					$submit.addClass('fa-spin');
+						if (!formOptions.submit_button_enabled)
+						{
+							$submit.attr("disabled", "disabled");
+						}
+					}
 
 					// Make validation post
-					$.post(Joomla.optionsStorage.validationary.ajax_url,
+					//$.post(Joomla.optionsStorage.validationary.ajax_url + '&dsa=' + Math.random(),
+					xhr = $.post(Joomla.optionsStorage.validationary.ajax_url,
 						form,
 						function (response, success, dataType) {
+
 							// Treat any text as error
 							var message;
 							var failed = false;
@@ -301,7 +378,6 @@ jQuery(document).ready(function($){
 							}
 
 							$this.removeClass('loading');
-							$submit.removeClass('fa-spin');
 
 							if (failed === true)
 							{
@@ -377,16 +453,6 @@ jQuery(document).ready(function($){
 								$this.addClass('valid');
 							}
 
-							var currentState;
-							if ($this.hasClass('error'))
-							{
-								currentState = 'error';
-							}
-							else if ($this.hasClass('valid'))
-							{
-								currentState = 'valid';
-							}
-
 							// If the AJAX call returned some field to be rechecked
 							// (e.g. on change email1 we need to revalidated email 2)
 							if (response.data && response.data.reCheckFields && event)
@@ -399,7 +465,7 @@ jQuery(document).ready(function($){
 								$elements.data('previous_value', '');
 
 								// And revalidated the fields
-								validateFields($elements, false);
+								validateFields($elements);
 							}
 							else
 							{
@@ -407,18 +473,17 @@ jQuery(document).ready(function($){
 								allowSubmit();
 							}
 						});
+						$this.data('xhr', xhr);
 				}, 500);
 			};
 
-			if ($fields.length >0 )
-			{
-				// Run on page reload
-				validateFields($fields);
+			// Attach the function on events
+			// $field.on('keyup keypress blur change', function () {
+			$fields.on('blur keyup change ', validateField );
 
-				// Attach the function on events
-				// $field.on('keyup keypress blur change', function () {
-				$fields.on('blur keyup ', validateField );
-			}
+			// Run on page reload
+			validateFields($fields);
+
 		});
 	};
 

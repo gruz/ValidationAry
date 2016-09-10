@@ -119,10 +119,13 @@ else
 				$rule->form_selector = array_map('trim', explode(PHP_EOL, $rule->form_selector));
 				$rule->form_selector = implode(', ', $rule->form_selector);
 
-				$rule->fields_selector = array_map('trim', explode(PHP_EOL, $rule->fields_selector));
-				$rule->fields_selector = implode(', ', $rule->fields_selector);
+				foreach (array('fields_selector_required', 'fields_selector_only_validate') as $k => $fields_selector)
+				{
+					$rule->$fields_selector = array_map('trim', explode(PHP_EOL, $rule->$fields_selector));
+					$rule->$fields_selector = implode(', ', $rule->$fields_selector);
 
-				$formsJQueryOptions[$rule->form_selector]['fields_selector'] = $rule->fields_selector;
+					$formsJQueryOptions[$rule->form_selector][$fields_selector] = $rule->$fields_selector;
+				}
 
 				if (empty($rule->xml_path))
 				{
@@ -133,6 +136,17 @@ else
 
 				$formsJQueryOptions[$rule->form_selector]['submit_button_enabled'] = (bool) $rule->submit_button_enabled;
 				$formsJQueryOptions[$rule->form_selector]['useAlerts'] = (bool) $rule->useAlerts;
+
+				if (!$formsJQueryOptions[$rule->form_selector]['submit_button_enabled'] && $rule->fontawesome != 'none')
+				{
+					$rule->fontawesome = $rule->fontawesome;
+				}
+				else
+				{
+					$rule->fontawesome = false;
+				}
+
+				$formsJQueryOptions[$rule->form_selector]['fontawesome'] = $rule->fontawesome;
 			}
 
 			if (empty($formsJQueryOptions))
@@ -146,9 +160,8 @@ else
 			$doc = JFactory::getDocument();
 			$doc->addScriptOptions($this->plg_name, array('forms' => $formsJQueryOptions ));
 
-			$url_ajax_plugin = JRoute::_(
-				// It's a must
-					JURI::base() . '?option=com_ajax&format=raw&'
+												// It's a must part
+			$url_ajax_plugin = JURI::base() . '?option=com_ajax&format=raw&'
 
 					// Pass token. Since ValidationAry posts the form itself, it has no sense.
 					// But what if we want to validate a single field?
@@ -165,8 +178,7 @@ else
 					. '&plugin=validate'
 
 					// It's optional to add to the link. Just in case to ignore link result caching.
-					. '&uniq=' . uniqid()
-				);
+					. '&uniq=' . uniqid();
 
 			// Below some optional stuff
 
@@ -191,12 +203,23 @@ else
 					. "</div>")
 			);
 
+			$doc->addScriptOptions(
+				$this->plg_name,
+				array(
+					'loading_snippet_light' => "<i aria-hidden='true' class='fa fa-spinner'></i> ")
+			);
+
 			$path_to_assets = '/plugins/' . $this->plg_type . '/' . $this->plg_name . '/';
 
 			// ?h='.md5(dirname(__FILE__).'/js/ajax.js') makes sure that the JS is reloaded. After a plugin update Joomla may use browser cached JS or CSS.
 			// ~ $doc->addScript($path_to_assets . '/js/ajax.js?h=' . md5_file(dirname(__FILE__) . '/js/ajax.js'));
 			$this->_addJSorCSS($path_to_assets . '/js/ajax.js');
 			$this->_addJSorCSS($path_to_assets . '/css/validationary.css');
+
+			if ($this->params->get('fontawesome', 'included') == 'include')
+			{
+				$doc->addScript('https://use.fontawesome.com/51275d8707.js');
+			}
 		}
 
 		/**
@@ -311,6 +334,7 @@ else
 
 				// To properly validate editing unique fields like email or username
 				// on editing existing records, we tell not to remove the id field used by email and username rules
+				$fieldsToPreserve['nogroup'][] = 'id';
 				$fieldsToPreserve[$groupName][] = 'id';
 
 				/* Do not remove, maybe will need to use.
@@ -359,7 +383,8 @@ else
 					$return['reCheckFields'][] = 'jform[' . $elementToRechek['name'] . ']';
 				}
 
-				// To validate one filed, we need to remove all other fields
+				// To validate one field, we need to remove all other fields except some vital ones like id, stored id $fieldsToPreserve
+				// We cannot reset XML and read our new one, as we want to preserve the needed fields attributes
 				foreach ($form->getFieldsets() as $fieldset)
 				{
 					$fields = $form->getFieldset($fieldset->name);
@@ -378,9 +403,16 @@ else
 
 						$fieldName = $field->getAttribute('name');
 
-						if (!in_array($fieldName, $fieldsToPreserve[$groupName]))
+						$fieldGroupName = 'nogroup';
+
+						if (!empty((string) $field->group))
 						{
-							$form->removeField($fieldName, $group);
+							$fieldGroupName = $field->group;
+						}
+
+						if (!isset($fieldsToPreserve[$fieldGroupName]) || !in_array($fieldName, $fieldsToPreserve[$fieldGroupName]))
+						{
+							$form->removeField($fieldName, $field->group);
 						}
 						// Try loading language
 						else
@@ -422,12 +454,15 @@ else
 
 				$form->bind($data);
 
-				// Test whether the data is valid.
 				$validData = $model->validate($form, $data, $group);
 
 				// Check for validation errors.
 				if ($validData === false)
 				{
+						$return['message'] = '';
+						$return['type'] = 'warning';
+						$return['continue'] = false;
+
 					// Get the validation messages.
 					$errors = $model->getErrors();
 
@@ -438,9 +473,15 @@ else
 
 					foreach ($errors as $error)
 					{
-						$errorFieldXMLObj = $error->getTrace();
-						$errorFieldXMLObj = $errorFieldXMLObj[0]['args'][0];
-						$name = (string) $errorFieldXMLObj['name'];
+						foreach ($error->getTrace() as $ke => $errorFieldXMLObj)
+						{
+							if ($errorFieldXMLObj['class'] == 'JForm')
+							{
+								$errorFieldXMLObj = $errorFieldXMLObj['args'][0];
+								$name = (string) $errorFieldXMLObj['name'];
+								break;
+							}
+						}
 
 						// Get error only for the needed field
 						if ($name != $fieldNameToValidate)
@@ -450,7 +491,15 @@ else
 
 						if ($error instanceof Exception)
 						{
-							$return['message'] = $error->getMessage();
+							if ($errorFieldXMLObj && !empty((string) $errorFieldXMLObj['message']))
+							{
+								$return['message'] = JText::_((string) $errorFieldXMLObj['message']);
+							}
+							else
+							{
+								$return['message'] = $error->getMessage();
+							}
+
 							$return['type'] = 'warning';
 							$return['continue'] = false;
 						}
