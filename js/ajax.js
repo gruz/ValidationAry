@@ -165,8 +165,71 @@ if (debug) console.log(formSelector);
 
 				// var required = $form.find(formOptions.fields_selector_required).not('label').not('fieldset').not('div').not('.valid');
 				var required = $form.find(formOptions.fields_selector_required + ',' + '.loading' + ',' + '.error').not('label').not('fieldset').not('div').not('.valid');
+
 if (debug) console.log(required);
-				if (required.length > 0)
+
+				var disable = true;
+
+				while (true)
+				{
+					if (required.length < 1) {
+						disable = false;
+
+						break;
+					}
+
+					required.each(function()
+					{
+						disable = true;
+						var $this = $(this);
+						var tagName = $this.prop("tagName");
+						$this.removeClass('error');
+
+						var $chzn = $this.next('.chzn-container') || false;
+
+						if ($chzn)
+						{
+							$chzn.removeClass('error');
+							$chzn.removeClass('valid');
+						}
+// ~ console.log($chzn);
+
+// ~ console.log($this, $this.val());
+						if (tagName === 'SELECT')
+						{
+// ~ console.log($this, $this.val());
+							if (!$this.val().length)
+							{
+// ~ console.log($this, $this.val());
+								disable = true;
+								$this.addClass('error');
+
+								if ($chzn)
+								{
+									$chzn.addClass('error');
+									$chzn.addClass('valid');
+								}
+							}
+							else
+							{
+								disable = false;
+							}
+						}
+						else
+						{
+
+						}
+					});
+
+
+					break;
+				}
+
+
+
+// ~ console.log('disable', disable);
+
+				if (disable)
 				{
 					$submit.attr("disabled", "disabled");
 					if ($fa)
@@ -479,7 +542,12 @@ if (debug) console.log(required);
 
 			// Attach the function on events
 			// $field.on('keyup keypress blur change', function () {
-			$fields.on('blur keyup change ', validateField );
+
+			$fields.on('blur keyup datechange', validateField );
+			$fields.on('change', function(){
+				$(this).removeClass('valid');
+				allowSubmit();
+			});
 
 			// Run on page reload
 			validateFields($fields);
