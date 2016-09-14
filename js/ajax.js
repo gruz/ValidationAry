@@ -36,16 +36,31 @@ if (debug) console.log(formSelector);
 			{
 				return;
 			}
-			formOptions.fields_selector = [formOptions.fields_selector_required,formOptions.fields_selector_only_validate];
-			// formOptions.fields_selector = formOptions.fields_selector_required + ',' + formOptions.fields_selector_only_validate
-			formOptions.fields_selector.join(',');
+
+			var fields_selectors = [formOptions.fields_selector_required,formOptions.fields_selector_only_validate];
+
+			formOptions.fields_selector = [];
+
+			var k = 0;
+			for (i = 0; i < fields_selectors.length; i++)
+			{
+				if (fields_selectors[i].length > 0)
+				{
+					formOptions.fields_selector[k]  = fields_selectors[i];
+					k++;
+				}
+			}
+
+			formOptions.fields_selector = formOptions.fields_selector.join(',');
 
 			var $fields = $form.find(formOptions.fields_selector).not('label').not('fieldset').not('div');
 
-
 			var $fields_required = $form.find(formOptions.fields_selector_required).not('label').not('fieldset').not('div');
+
 			$fields_required.data('required', true);
+
 			var $fields_only_validate = $form.find(formOptions.fields_selector_only_validate).not('label').not('fieldset').not('div');
+
 			$fields_only_validate.data('required', false);
 			if (!$fields.length)
 			{
@@ -111,7 +126,7 @@ if (debug) console.log(formSelector);
 					$response.html();
 				}
 
-				$this.removeClass('valid invalid error loading');
+				$this.removeClass('validated invalid error loading');
 
 				if ($this.hasClass('hasPopover') && $this.popoverWasChanged)
 				{
@@ -165,15 +180,19 @@ if (debug) console.log(formSelector);
 					return;
 				}
 
-				// var required = $form.find(formOptions.fields_selector_required).not('label').not('fieldset').not('div').not('.valid');
-				var required = $form.find(formOptions.fields_selector_required + ',' + '.loading' + ',' + '.error').not('label').not('fieldset').not('div').not('.valid');
-
-if (debug) console.log(required);
-
 				var disable = true;
 
 				while (true)
 				{
+
+					if ($form.find('.error, .loading').length >0 )
+					{
+						break;
+					}
+
+					var required = $form.find(formOptions.fields_selector_required).not('label').not('fieldset').not('div').not('.validated');
+
+
 					if (required.length < 1) {
 						disable = false;
 
@@ -185,31 +204,26 @@ if (debug) console.log(required);
 						disable = true;
 						var $this = $(this);
 						var tagName = $this.prop("tagName");
-						$this.removeClass('error');
 
 						var $chzn = $this.next('.chzn-container') || false;
 
 						if ($chzn)
 						{
 							$chzn.removeClass('error');
-							$chzn.removeClass('valid');
+							$chzn.removeClass('validated');
 						}
-// ~ console.log($chzn);
 
-// ~ console.log($this, $this.val());
 						if (tagName === 'SELECT')
 						{
-// ~ console.log($this, $this.val());
 							if (!$this.val().length)
 							{
-// ~ console.log($this, $this.val());
 								disable = true;
 								$this.addClass('error');
 
 								if ($chzn)
 								{
 									$chzn.addClass('error');
-									$chzn.addClass('valid');
+									$chzn.addClass('validated');
 								}
 							}
 							else
@@ -226,10 +240,6 @@ if (debug) console.log(required);
 
 					break;
 				}
-
-
-
-// ~ console.log('disable', disable);
 
 				if (disable)
 				{
@@ -515,7 +525,8 @@ if (debug) console.log(required);
 							else
 							{
 								makeFieldUntouched($this);
-								$this.addClass('valid');
+
+								$this.addClass('validated');
 							}
 
 							// If the AJAX call returned some field to be rechecked
@@ -547,7 +558,6 @@ if (debug) console.log(required);
 
 			$fields.on('blur keyup datechange', validateField );
 			$fields.on('change', function(){
-				$(this).removeClass('valid');
 				allowSubmit();
 			});
 
