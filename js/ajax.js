@@ -36,15 +36,17 @@ if (debug) console.log(formSelector);
 			{
 				return;
 			}
+			formOptions.fields_selector = [formOptions.fields_selector_required,formOptions.fields_selector_only_validate];
+			// formOptions.fields_selector = formOptions.fields_selector_required + ',' + formOptions.fields_selector_only_validate
+			formOptions.fields_selector.join(',');
 
-			formOptions.fields_selector = formOptions.fields_selector_required + ',' + formOptions.fields_selector_only_validate
 			var $fields = $form.find(formOptions.fields_selector).not('label').not('fieldset').not('div');
+
 
 			var $fields_required = $form.find(formOptions.fields_selector_required).not('label').not('fieldset').not('div');
 			$fields_required.data('required', true);
 			var $fields_only_validate = $form.find(formOptions.fields_selector_only_validate).not('label').not('fieldset').not('div');
 			$fields_only_validate.data('required', false);
-
 			if (!$fields.length)
 			{
 				return;
