@@ -184,59 +184,19 @@ if (debug) console.log(formSelector);
 
 				while (true)
 				{
-
-					if ($form.find('.error, .loading').length >0 )
+					var errorLoading = $form.find('.error, .loading').not('select');
+					if (errorLoading.length >0 )
 					{
 						break;
 					}
 
 					var required = $form.find(formOptions.fields_selector_required).not('label').not('fieldset').not('div').not('.validated');
 
-
 					if (required.length < 1) {
 						disable = false;
 
 						break;
 					}
-
-					required.each(function()
-					{
-						disable = true;
-						var $this = $(this);
-						var tagName = $this.prop("tagName");
-
-						var $chzn = $this.next('.chzn-container') || false;
-
-						if ($chzn)
-						{
-							$chzn.removeClass('error');
-							$chzn.removeClass('validated');
-						}
-
-						if (tagName === 'SELECT')
-						{
-							if (!$this.val().length)
-							{
-								disable = true;
-								$this.addClass('error');
-
-								if ($chzn)
-								{
-									$chzn.addClass('error');
-									$chzn.addClass('validated');
-								}
-							}
-							else
-							{
-								disable = false;
-							}
-						}
-						else
-						{
-
-						}
-					});
-
 
 					break;
 				}
@@ -277,7 +237,6 @@ if (debug) console.log(formSelector);
 					validateField(null, $($elements[i]));
 					// continue;
 				}
-
 				allowSubmit();
 			};
 
@@ -300,6 +259,52 @@ if (debug) console.log(formSelector);
 
 				var $this = $element || $(this);
 
+				// Special behaviour for a select
+
+					var tagName = $this.prop("tagName");
+
+					if (tagName === 'SELECT' && $this.data('required'))
+					{
+console.log('aaa');
+						var $chzn = $this.next('.chzn-container') || false;
+						var $chzn = $this.parent().find('.chzn-container') || false;
+
+						if ($chzn.length)
+						{
+							$chzn.removeClass('error');
+							$chzn.removeClass('validated');
+						}
+						$this.parent().removeClass('error');
+
+						if (!$this.val().length)
+						{
+							$this.addClass('error');
+
+							if ($chzn.length)
+							{
+								$chzn.addClass('error');
+							}
+							else
+							{
+								$this.parent().addClass('error');
+							}
+						}
+						else
+						{
+							$this.addClass('validated');
+
+							if ($chzn.length)
+							{
+								$chzn.addClass('validated');
+							}
+
+						}
+						allowSubmit();
+						return;
+					}
+
+
+
 				// Do not run if nothing was changed in the field
 				var previous_value = $this.data('previous_value');
 
@@ -316,6 +321,8 @@ if (debug) console.log(formSelector);
 
 				if (xhr)
 				{
+					$this.removeClass('loading');
+
 					xhr.abort();
 				}
 
@@ -556,11 +563,10 @@ if (debug) console.log(formSelector);
 			// Attach the function on events
 			// $field.on('keyup keypress blur change', function () {
 
-			$fields.on('blur keyup datechange', validateField );
-			$fields.on('change', function(){
-				allowSubmit();
+			$fields.on('blur keyup datechange ', validateField );
+			$fields.on(' change', function (){
+						validateField(null, $(this));
 			});
-
 			// Run on page reload
 			validateFields($fields);
 

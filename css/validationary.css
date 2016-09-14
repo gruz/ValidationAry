@@ -4,7 +4,8 @@
 }
 .validationary .invalid,
 .validationary input.error,
-.validationary .chzn-container.error > a
+.validationary .chzn-container.error > a,
+.validationary .error .chzn-container > a
 {
 	border-color:brown;
 }
