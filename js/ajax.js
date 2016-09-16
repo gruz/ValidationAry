@@ -185,6 +185,7 @@ if (debug) console.log(formSelector);
 				while (true)
 				{
 					var errorLoading = $form.find('.error, .loading').not('select');
+
 					if (errorLoading.length >0 )
 					{
 						break;
@@ -265,7 +266,7 @@ if (debug) console.log(formSelector);
 
 					if (tagName === 'SELECT' && $this.data('required'))
 					{
-console.log('aaa');
+
 						var $chzn = $this.next('.chzn-container') || false;
 						var $chzn = $this.parent().find('.chzn-container') || false;
 
@@ -423,7 +424,7 @@ console.log('aaa');
 						$this.popoverWasChanged = true;
 					}
 
-					$this.removeClass('error valid');
+					$this.removeClass('error validated');
 					// Set submit button to show the form is being validated
 					if ($fa)
 					{
