@@ -190,8 +190,8 @@ if (debug) console.log(formSelector);
 					{
 						break;
 					}
-
 					var required = $form.find(formOptions.fields_selector_required).not('label').not('fieldset').not('div').not('.validated');
+
 
 					if (required.length < 1) {
 						disable = false;
@@ -400,7 +400,7 @@ if (debug) console.log(formSelector);
 							{name: "form_task", value: form_task},
 							{name: "form_option", value: form_option},
 							{name: "field_to_validate", value: $this.attr('name')},
-							{name: "xml_path", value: formOptions.xml_path}
+							{name: "rule_number", value: formOptions.rule_number}
 					]);
 
 					// Remove popover and response output
@@ -544,7 +544,7 @@ if (debug) console.log(formSelector);
 								// Find fields to be revalidated
 								var end_glue = '"]';
 								var glue = ' input[name="';
-								var selector = glue + response.data.reCheckFields.join(glue + end_glue + ', ') + end_glue;
+								var selector = glue + response.data.reCheckFields.join(end_glue + ', ' + glue) + end_glue;
 								var $elements = $parent.find(selector);
 								$elements.data('previous_value', '');
 

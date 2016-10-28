@@ -43,6 +43,12 @@
 					default="#member-registration"
 					cols="80" rows="6" class="span12"/>
 
+				<field name="subform_selectors" type="textarea"
+					label="PLG_SYSTEM_VALIDATIONARY_SUBFORM_SELECTORS"
+					description="PLG_SYSTEM_VALIDATIONARY_SUBFORM_SELECTORS_DESC"
+					default="subform"
+					cols="80" rows="4" class="span12"/>
+
 
 		</fieldset>
 		<fieldset name="section2" label="">

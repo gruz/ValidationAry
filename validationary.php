@@ -63,6 +63,8 @@ else
 				{
 		static public $debug = false;
 
+		// ~ static public $debug = false;
+
 		/**
 		 * The entry point of the plugin
 		 *
@@ -127,12 +129,7 @@ else
 					$formsJQueryOptions[$rule->form_selector][$fields_selector] = $rule->$fields_selector;
 				}
 
-				if (empty($rule->xml_path))
-				{
-					$rule->xml_path = '';
-				}
-
-				$formsJQueryOptions[$rule->form_selector]['xml_path'] = $rule->xml_path;
+				$formsJQueryOptions[$rule->form_selector]['rule_number'] = $k;
 
 				$formsJQueryOptions[$rule->form_selector]['submit_button_enabled'] = (bool) $rule->submit_button_enabled;
 				$formsJQueryOptions[$rule->form_selector]['useAlerts'] = (bool) $rule->useAlerts;
@@ -235,11 +232,12 @@ else
 
 			$post = JFactory::getApplication()->input->post;
 
-			$group = $jinput->post->getCmd('group', null);
+			// ~ $group = $jinput->post->getCmd('group', null);
 
 			$data = $jinput->post->get('jform', array(), 'array');
 
 			$field_to_validate = $post->get('field_to_validate', null, 'raw');
+			$field_value = $jinput->post->get($field_to_validate);
 
 			// Normalize fields like jform[group][subgroup][subsubgroup][fieldname]
 			// to group.subgroup.subsubgroup.fieldname
@@ -248,10 +246,39 @@ else
 			$field_to_validate = str_replace(']', '', $field_to_validate);
 			$field_to_validate = explode('.', $field_to_validate);
 
+			$field_value = $data;
+
+			foreach ($field_to_validate as $k => $v)
+			{
+				$field_value = $field_value[$v];
+			}
+
 			// Get from group.subgroup.subsubgroup.fieldname
 			// $group = group.subgroup.subsubgroup and $fieldNameToValidate = $field
 			$fieldNameToValidate = array_pop($field_to_validate);
+
+			// For repeatbale fields the field path should be trimmed
+			$count = count($field_to_validate);
+
+			if ($count > 1)
+			{
+				$preLast = $field_to_validate[$count - 2];
+				$last = $field_to_validate[$count - 1];
+				$suffix = str_replace($preLast, '', $last);
+
+				// If is integer
+				if (ctype_digit(strval($suffix)))
+				{
+					unset($field_to_validate[$count - 1]);
+				}
+			}
+
 			$group = implode('.', $field_to_validate);
+
+			if (!empty($group))
+			{
+				$this->_setArrayValueByPath($data, $group . '.' . $fieldNameToValidate, $field_value);
+			}
 
 			$return = array(
 				'message' => '',
@@ -259,7 +286,12 @@ else
 				'continue' => true
 			);
 
-			$xmls_to_load = $jinput->post->get('xml_path', null, 'raw');
+			$rule_number = $jinput->post->get('rule_number', null, 'int');
+			$settingsName = 'form-settings-group';
+			$rules = $this->params->get($settingsName, array());
+			$rule = $rules->{$settingsName . $rule_number};
+
+			$xmls_to_load = $rule->xml_path;
 
 			if (empty($xmls_to_load))
 			{
@@ -313,6 +345,8 @@ else
 				$form->loadFile($xml_to_load);
 			}
 
+			$xml = $form->getXml();
+
 			if (!$form)
 			{
 				$return['message'] = $form->getErrors();
@@ -321,6 +355,40 @@ else
 			}
 			else
 			{
+				$subform_selectors = array_map('trim', explode(PHP_EOL, $rule->subform_selectors));
+
+				$thereAreSubforms = true;
+
+				while ($thereAreSubforms)
+				{
+					$thereAreSubforms = false;
+
+					$subforms = array();
+
+					foreach ($subform_selectors as $subform_selector)
+					{
+						$xpath = '//field[@type="' . $subform_selector . '"]';
+						$subforms = array_merge($subforms, $form->getXML()->xpath($xpath));
+					}
+
+					if (!empty($subforms))
+					{
+						$thereAreSubforms = true;
+					}
+
+					foreach ($subforms as $i => $subFormField)
+						{
+						$subformPath = JPATH_ROOT . '/' . $subFormField['formsource'];
+							$subfromAsElement = new SimpleXMLElement($subformPath, null, true);
+						$wrapperElement = new SimpleXMLElement('<fields name="' . $subFormField['name'] . '" />');
+						$this->_addNode($wrapperElement, $subfromAsElement);
+							$parentElement = $subFormField->xpath("..")[0];
+						$this->_addNode($parentElement, $wrapperElement);
+						unset($subFormField->{0});
+						continue;
+					}
+				}
+
 				$groupName = $group;
 
 				if (empty($group))
@@ -369,18 +437,100 @@ else
 
 				if ($validateRule == 'equals')
 				{
-					$fieldsToPreserve[$groupName][] = $field_to_validate->getAttribute('field');
+					$tmp_name = $field_to_validate->getAttribute('field');
+					$tmp_name = str_replace($groupName . '.', '', $tmp_name);
+					$fieldsToPreserve[$groupName][] = $tmp_name;
+
+					if (!empty($group))
+					{
+						$equal_field_value = $data;
+						$equal_field_path = explode('.', $groupName);
+						$equal_field_path[] = $last;
+						$equal_field_path[] = $tmp_name;
+
+						foreach ($equal_field_path as $k => $v)
+						{
+							$equal_field_value = $equal_field_value[$v];
+						}
+
+						$this->_setArrayValueByPath($data, $group . '.' . $tmp_name, $equal_field_value);
+
+						// ~ $data[$groupName . '.' . $tmp_name] = $equal_field_value;
+						$fieldsToPreserve[$groupName][] = $tmp_name;
+
+						// ~ $equalFieldElement = new SimpleXMLElement('<field name="' . $group . '.' . $tmp_name . '" />');
+						// ~ $this->_addNode($form->getXML(), $equalFieldElement);
+					}
 				}
 
 				// Find if there is another element which must be equal to the current one
 				// If there is such an element, then notify JS to recheck it (pass )
-				$xpath = '//field[@validate="equals"][@field="' . $field_to_validate->getAttribute('name') . '"]';
+
+				if (!empty($group))
+				{
+					$xpath = $group;
+					$xpath = explode('.', $xpath);
+
+					for ($i = 0; $i < count($xpath); $i++)
+					{
+						$xpath[$i] = '//fields[@name="' . $xpath[$i] . '"]';
+					}
+
+					$xpath[] = '//field[@validate="equals"][@field="' . $fieldNameToValidate . '"]';
+
+					$xpath = implode('', $xpath);
+				}
+				else
+				{
+					$xpath = '//field[@validate="equals"][@field="' . $fieldNameToValidate . '"]';
+				}
 
 				$elementsToRecheck = $form->getXML()->xpath($xpath);
 
 				foreach ($elementsToRecheck as $elementToRechek)
 				{
-					$return['reCheckFields'][] = 'jform[' . $elementToRechek['name'] . ']';
+					$fieldToRecheckName = $elementToRechek['name'];
+					$path = "";
+
+					while (true)
+					{
+							// Determine preceding and following elements, build a position predicate from it.
+							$elementName = $elementToRechek->getName();
+							$preceding = $elementToRechek->xpath("preceding-sibling::" . $elementName);
+							$following = $elementToRechek->xpath("following-sibling::" . $elementName);
+
+							// ~ $predicate = (count($preceding) + count($following)) > 0 ? "[".(count($preceding)+1)."]" : "";
+							if ($elementName == 'fields')
+							{
+								// ~ $path = "/".$elementToRechek['name'].$predicate.$path;
+								$path = $elementToRechek['name'] . "." . $path;
+							}
+							// Is there a parent node? Then go on.
+							$elementToRechek = $elementToRechek->xpath("parent::*");
+
+							if (count($elementToRechek) > 0)
+							{
+								$elementToRechek = $elementToRechek[0];
+							}
+							else
+							{
+								break;
+							}
+					}
+
+					if (!empty($last))
+					{
+						$path = $path . $last . '.' . $fieldToRecheckName;
+					}
+					else
+					{
+						$path = $path . $fieldToRecheckName;
+					}
+
+					$path = str_replace('.', '][', $path);
+
+					// ~ $path = $this->_getElementPath($elementToRechek);
+					$return['reCheckFields'][] = 'jform[' . $path . ']';
 				}
 
 				// To validate one field, we need to remove all other fields except some vital ones like id, stored id $fieldsToPreserve
@@ -405,7 +555,9 @@ else
 
 						$fieldGroupName = 'nogroup';
 
-						if (!empty((string) $field->group))
+						$tmp = (string) $field->group;
+
+						if (!empty($tmp))
 						{
 							$fieldGroupName = $field->group;
 						}
@@ -454,6 +606,9 @@ else
 
 				$form->bind($data);
 
+// ~ echo $form->getXML()->asXML();
+// ~ exit;
+
 				$validData = $model->validate($form, $data, $group);
 
 				// Check for validation errors.
@@ -491,7 +646,9 @@ else
 
 						if ($error instanceof Exception)
 						{
-							if ($errorFieldXMLObj && !empty((string) $errorFieldXMLObj['message']))
+							$tmp = (string) $errorFieldXMLObj['message'];
+
+							if ($errorFieldXMLObj && !empty($tmp))
 							{
 								$return['message'] = JText::_((string) $errorFieldXMLObj['message']);
 							}
@@ -565,6 +722,72 @@ else
 				$language->load($extension, JPATH_ROOT, 'en-GB', true);
 				$language->load($extension, JPATH_ROOT, $default_lang, true);
 			}
+		}
+
+		/**
+		 * Adds a new child SimpleXMLElement node to the source.
+		 * Copied from JForm class, where it's alas protected and cannot be reused
+		 *
+		 * @param   SimpleXMLElement  $source  The source element on which to append.
+		 * @param   SimpleXMLElement  $new     The new element to append.
+		 *
+		 * @return  void
+		 *
+		 * @since   11.1
+		 */
+		protected static function _addNode(SimpleXMLElement $source, SimpleXMLElement $new)
+		{
+			// Add the new child node.
+			$node = $source->addChild($new->getName(), htmlspecialchars(trim($new)));
+
+			// Add the attributes of the child node.
+			foreach ($new->attributes() as $name => $value)
+			{
+				$node->addAttribute($name, $value);
+			}
+
+			// Add any children of the new node.
+			foreach ($new->children() as $child)
+			{
+				self::_addNode($node, $child);
+			}
+		}
+
+		/**
+		 * Sets a value to an array by a string path
+		 *
+		 * Taken from http://stackoverflow.com/questions/9628176/using-a-string-path-to-set-nested-array-data
+		 *
+		 * @param   array   &$data  Objects are converted into arrays
+		 * @param   string  $path   Dot separated path
+		 * @param   mixed   $value  Value to be set
+		 *
+		 * @return   type  Description
+		 */
+		public static function _setArrayValueByPath(&$data, $path, $value)
+		{
+			if (!is_array($path))
+			{
+				$path = explode('.', $path);
+			}
+
+			// This code is
+			$temp = &$data;
+
+			foreach ($path as $key)
+			{
+				if (is_object($temp))
+				{
+					$temp = &$temp->$key;
+				}
+				else
+				{
+					$temp = &$temp[$key];
+				}
+			}
+
+			$temp = $value;
+			unset($temp);
 		}
 	}
 }

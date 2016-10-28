@@ -141,7 +141,7 @@ class JPluginGJFields extends JPlugin
 		if (file_exists(JPATH_SITE . '/' . $addition[0]) && isset($addition[1]))
 		{
 			require JPATH_SITE . '/' . $addition[0];
-			$additionVar = $$addition[1];
+			$additionVar = ${$addition[1]};
 
 			if (!is_array($additionVar))
 			{
@@ -405,7 +405,8 @@ class JPluginGJFields extends JPlugin
 			}
 
 			$params_old = $session->get('DefaultParams', array(), $hash);
-			$params = array_merge($params, $params_old);
+			$params = array_merge($params_old, $params);
+
 			$session->set('DefaultParams', $params, $hash);
 	}
 
@@ -529,7 +530,7 @@ class JPluginGJFields extends JPlugin
 		if (!empty($uribase))
 		{
 			$file_path = JPath::clean(str_replace(JPATH_ROOT . '/' . JUri::base(true), JPATH_ROOT . '/', $file_path));
-			$url = JPath::clean(JUri::base(true) . '/' . $url);
+			$url = JPath::clean(JUri::root(true) . '/' . $url);
 		}
 
 		// If the file is a local one, then add it's md5_file hash to the link
@@ -563,11 +564,11 @@ class JPluginGJFields extends JPlugin
 		if ($includeMinified)
 		{
 			$url = $url_minified;
-			$file_path = md5_file($file_path);
+			// $file_path = md5_file($file_path);
 		}
 		else
 		{
-			$file_path = md5_file($file_path);
+			// $file_path = md5_file($file_path);
 		}
 
 		$doc = JFactory::getDocument();
