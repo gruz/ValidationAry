@@ -53,8 +53,7 @@ if (debug) console.log(formSelector);
 
 			formOptions.fields_selector = formOptions.fields_selector.join(',');
 
-			var $fields = $form.find(formOptions.fields_selector).not('label').not('fieldset').not('div');
-
+			var $fields = $form.find(formOptions.fields_selector).not('label').not('fieldset').not('div').not('.validation_setup');
 			var $fields_required = $form.find(formOptions.fields_selector_required).not('label').not('fieldset').not('div');
 
 			$fields_required.data('required', true);
@@ -260,13 +259,14 @@ if (debug) console.log(formSelector);
 
 				var $this = $element || $(this);
 
-				// Special behaviour for a select
+				// We use this class to show that the field has already a validation event
+				$this.addClass('validation_setup');
 
+				// Special behaviour for a select
 					var tagName = $this.prop("tagName");
 
 					if (tagName === 'SELECT' && $this.data('required'))
 					{
-
 						var $chzn = $this.next('.chzn-container') || false;
 						var $chzn = $this.parent().find('.chzn-container') || false;
 
@@ -303,8 +303,6 @@ if (debug) console.log(formSelector);
 						allowSubmit();
 						return;
 					}
-
-
 
 				// Do not run if nothing was changed in the field
 				var previous_value = $this.data('previous_value');
@@ -440,8 +438,8 @@ if (debug) console.log(formSelector);
 					//$.post(Joomla.optionsStorage.validationary.ajax_url + '&dsa=' + Math.random(),
 					xhr = $.post(Joomla.optionsStorage.validationary.ajax_url,
 						form,
-						function (response, success, dataType) {
-
+						function (response, success, dataType)
+						{
 							// Treat any text as error
 							var message;
 							var failed = false;

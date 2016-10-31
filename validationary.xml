@@ -4,10 +4,10 @@
 	<author>Gruz</author>
 	<authorEmail>arygroup@gmail.com</authorEmail>
 	<authorUrl>http://gruz.org.ua/extensions/validationary.html</authorUrl>
-	<creationDate>2016-10-28</creationDate>
+	<creationDate>2016-10-31</creationDate>
 	<copyright>Copyright (C) 2004-2016 Gruz All rights reserved.</copyright>
 	<license>GNU General Public License</license>
-	<version>0.0.14</version>
+	<version>0.0.15</version>
 	<description>PLG_SYSTEM_VALIDATIONARY_FIELD_DESC</description>
 	<files>
 	<folder>css</folder><folder>extensions</folder><folder>form</folder><folder>images</folder><folder>js</folder><folder>language</folder><folder>model</folder><filename>README.md</filename><filename>index.html</filename><filename>scriptary.php</filename><filename>scriptfile.php</filename><filename plugin="validationary">validationary.php</filename></files>
@@ -19,6 +19,11 @@
 			<field name="behavior" type="list" default="bootstrap2" label="PLG_SYSTEM_VALIDATIONARY_BEHAVIOR" description="PLG_SYSTEM_VALIDATIONARY_BEHAVIOR_DESC" class="span6">
 				<option value="bootstrap2">Bootstrap 2</option>
 				<option value="bootstrap3">Bootstrap 3</option>
+			</field>
+
+			<field name="joomla_validate_remove" type="list" default="0" label="PLG_SYSTEM_VALIDATIONARY_JOOMLA_VALIDATE_REMOVE" description="PLG_SYSTEM_VALIDATIONARY_JOOMLA_VALIDATE_REMOVE_DESC" class="span6">
+				<option value="0">JNO</option>
+				<option value="1">JYES</option>
 			</field>
 
 			<field name="form-settings-group" type="subform" formsource="plugins/system/validationary/form/form.xml" multiple="true" groupByFieldset="true" layout="joomla.form.field.subform.repeatable-table" label="" min="1" max="99999"/>

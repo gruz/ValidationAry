@@ -210,8 +210,8 @@ else
 
 			// ?h='.md5(dirname(__FILE__).'/js/ajax.js') makes sure that the JS is reloaded. After a plugin update Joomla may use browser cached JS or CSS.
 			// ~ $doc->addScript($path_to_assets . '/js/ajax.js?h=' . md5_file(dirname(__FILE__) . '/js/ajax.js'));
-			$this->_addJSorCSS($path_to_assets . '/js/ajax.js');
-			$this->_addJSorCSS($path_to_assets . '/css/validationary.css');
+			$this->_addJSorCSS($path_to_assets . 'js/ajax.js');
+			$this->_addJSorCSS($path_to_assets . 'css/validationary.css');
 
 			if ($this->params->get('fontawesome', 'included') == 'include')
 			{
@@ -788,6 +788,28 @@ else
 
 			$temp = $value;
 			unset($temp);
+		}
+
+		/**
+		 * Used to modyfy HEAD section
+		 *
+		 * Removes core Joomla validation if needed
+		 *
+		 * @return   void
+		 */
+		public function onBeforeCompileHead()
+		{
+			$joomla_validate_remove = $this->params->get('joomla_validate_remove', false);
+
+			if (!$joomla_validate_remove)
+			{
+				return;
+			}
+
+			$doc = JFactory::getDocument();
+
+		// Remove core old Bootstrap 2
+			unset($doc->_scripts[JURI::base(true) . '/media/system/js/validate.js']);
 		}
 	}
 }
