@@ -1,3 +1,14 @@
+/*
+	(function($){
+		$.event.special.destroyed = {
+			remove: function(o) {
+				if (o.handler) {
+					o.handler()
+				}
+			}
+		}
+	})(jQuery)
+*/
 jQuery(document).ready(function($){
 
 	var debug = true;
@@ -21,12 +32,95 @@ if (debug) console.log(Joomla.optionsStorage.validationary);
 if (debug) console.log(Joomla.optionsStorage.validationary.forms);
 		$.each(Joomla.optionsStorage.validationary.forms, function(formSelector, formOptions)
 		{
+
+			/**
+			 * Either enables or disables submit button
+			 *
+			 * Our required fields can be in three states:
+			 * - not yet edited (submit disabled)
+			 * - error (submit disabled)
+			 * - valid (submit enabled)
+			 *
+			 * @return   void
+			 */
+			var allowSubmit = function()
+			{
+				if (formOptions.submit_button_enabled)
+				{
+					return;
+				}
+
+				var disable = true;
+
+				while (true)
+				{
+					var errorLoading = $form.find('.error, .loading').not('select');
+
+					if (errorLoading.length >0 )
+					{
+						break;
+					}
+
+					var required = $form.find(formOptions.fields_selector_required).not('label').not('fieldset').not('div').not('.validated');
+
+					if (required.length < 1) {
+						disable = false;
+
+						break;
+					}
+
+					break;
+				}
+
+				if (disable)
+				{
+					$submit.attr("disabled", "disabled");
+					if ($fa)
+					{
+						$fa.removeClass('fa-check-circle-o');
+						$fa.addClass('fa-close');
+					}
+				}
+				else
+				{
+					$submit.removeAttr("disabled");
+					$fa.addClass('fa-check-circle-o');
+				}
+
+				if ($fa)
+				{
+					$fa.removeClass('fa-spin fa-spinner');
+				}
+
+			};
 if (debug) console.log(formSelector);
 			var $form = $($parent.find(formSelector));
 			if (!$form.length)
 			{
 				return;
 			}
+
+			var $submit = $($form.find('*[type="submit"]'));
+
+
+			var $fa = false;
+
+			switch (formOptions.fontawesome)
+			{
+				case 'include':
+				case 'included':
+					$fa = $($submit.find('.fa'));
+
+					if ($fa.length < 1)
+					{
+						$submit.prepend(Joomla.optionsStorage.validationary.loading_snippet_light);
+						$fa = $($submit.find('.fa'));
+					}
+					break;
+				default:
+					break;
+			}
+			allowSubmit();
 
 			if (!$form.hasClass('validationary'))
 			{
@@ -68,7 +162,6 @@ if (debug) console.log(formSelector);
 
 			// $form.addClass('validationary');
 
-			var $submit = $($form.find('*[type="submit"]'));
 			var timer;
 
 			// Here we determins which response to use (one or both)
@@ -81,23 +174,6 @@ if (debug) console.log(formSelector);
 
 			var popoverPlacement;
 
-			var $fa = false;
-
-			switch (formOptions.fontawesome)
-			{
-				case 'include':
-				case 'included':
-					$fa = $($submit.find('.fa'));
-
-					if ($fa.length < 1)
-					{
-						$submit.prepend(Joomla.optionsStorage.validationary.loading_snippet_light);
-						$fa = $($submit.find('.fa'));
-					}
-					break;
-				default:
-					break;
-			}
 
 			switch (Joomla.optionsStorage.validationary.behavior)
 			{
@@ -161,68 +237,6 @@ if (debug) console.log(formSelector);
 				}
 				allowSubmit();
 			};
-
-			/**
-			 * Either enables or disables submit button
-			 *
-			 * Our required fields can be in three states:
-			 * - not yet edited (submit disabled)
-			 * - error (submit disabled)
-			 * - valid (submit enabled)
-			 *
-			 * @return   void
-			 */
-			var allowSubmit = function()
-			{
-				if (formOptions.submit_button_enabled)
-				{
-					return;
-				}
-
-				var disable = true;
-
-				while (true)
-				{
-					var errorLoading = $form.find('.error, .loading').not('select');
-
-					if (errorLoading.length >0 )
-					{
-						break;
-					}
-					var required = $form.find(formOptions.fields_selector_required).not('label').not('fieldset').not('div').not('.validated');
-
-
-					if (required.length < 1) {
-						disable = false;
-
-						break;
-					}
-
-					break;
-				}
-
-				if (disable)
-				{
-					$submit.attr("disabled", "disabled");
-					if ($fa)
-					{
-						$fa.removeClass('fa-check-circle-o');
-						$fa.addClass('fa-close');
-					}
-				}
-				else
-				{
-					$submit.removeAttr("disabled");
-					$fa.addClass('fa-check-circle-o');
-				}
-
-				if ($fa)
-				{
-					$fa.removeClass('fa-spin fa-spinner');
-				}
-
-			};
-
 
 			/**
 			 * Just a proxy to run per-field validation on a list of fileds
@@ -566,6 +580,7 @@ if (debug) console.log(formSelector);
 			$fields.on(' change', function (){
 						validateField(null, $(this));
 			});
+
 			// Run on page reload
 			validateFields($fields);
 
