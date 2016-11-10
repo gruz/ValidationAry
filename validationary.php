@@ -260,16 +260,30 @@ else
 			// For repeatbale fields the field path should be trimmed
 			$count = count($field_to_validate);
 
+			// Clean up fields path from repeatable elements,
+			// E.g. profile.child.child0 should only leave profile.child
 			if ($count > 1)
 			{
-				$preLast = $field_to_validate[$count - 2];
-				$last = $field_to_validate[$count - 1];
-				$suffix = str_replace($preLast, '', $last);
-
-				// If is integer
-				if (ctype_digit(strval($suffix)))
+				foreach ($field_to_validate as $k => $pathElement)
 				{
-					unset($field_to_validate[$count - 1]);
+					if ($k === 0)
+					{
+						$prev = $field_to_validate[$k];
+						continue;
+					}
+
+					$curr = $field_to_validate[$k];
+
+					$suffix = str_replace($prev, '', $curr);
+
+					// If is integer
+					if (ctype_digit(strval($suffix)))
+					{
+						unset($field_to_validate[$k]);
+						continue;
+					}
+
+					$prev = $field_to_validate[$k];
 				}
 			}
 
@@ -399,6 +413,9 @@ else
 				$fieldsToPreserve[$groupName][] = $fieldNameToValidate;
 
 				$field_to_validate = $form->getField($fieldNameToValidate, $group);
+
+// ~ echo $form->getXML()->asXML();
+// ~ exit;
 
 				// To properly validate editing unique fields like email or username
 				// on editing existing records, we tell not to remove the id field used by email and username rules
