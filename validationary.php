@@ -253,6 +253,26 @@ else
 				$field_value = $field_value[$v];
 			}
 
+			// Email fields validation requires to know user id, which is stored in `id` field.
+			// This works by default, but doesn't work for repeatable fields which we fix here
+
+			$field_to_validate_id = $field_to_validate;
+			$field_name_to_be_validated_tmp = array_pop($field_to_validate_id);
+
+			if ($field_name_to_be_validated_tmp != 'id')
+			{
+				$field_to_validate_id[] = 'id';
+
+				$field_value_id = $data;
+
+				foreach ($field_to_validate_id as $k => $v)
+				{
+					$field_value_id = $field_value_id[$v];
+				}
+
+				unset($field_to_validate_id);
+			}
+
 			// Get from group.subgroup.subsubgroup.fieldname
 			// $group = group.subgroup.subsubgroup and $fieldNameToValidate = $field
 			$fieldNameToValidate = array_pop($field_to_validate);
@@ -292,6 +312,13 @@ else
 			if (!empty($group))
 			{
 				$this->_setArrayValueByPath($data, $group . '.' . $fieldNameToValidate, $field_value);
+
+				// Set additional id variable if case of nested fields
+				// Specially for nested repeatable email check
+				if ($field_name_to_be_validated_tmp != 'id')
+				{
+					$this->_setArrayValueByPath($data, $group . '.' . 'id', $field_value_id);
+				}
 			}
 
 			$return = array(
