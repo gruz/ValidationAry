@@ -267,7 +267,10 @@ else
 
 				foreach ($field_to_validate_id as $k => $v)
 				{
-					$field_value_id = $field_value_id[$v];
+					if (isset($field_value_id[$v]))
+					{
+						$field_value_id = $field_value_id[$v];
+					}
 				}
 
 				unset($field_to_validate_id);
