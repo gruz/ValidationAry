@@ -269,54 +269,54 @@ if (debug) console.log(formSelector);
 			 *
 			 * @return   void
 			 */
-			var validateField = function (event, $element) {
-
+			var validateField = function (event, $element)
+			{
 				var $this = $element || $(this);
 
 				// We use this class to show that the field has already a validation event
 				$this.addClass('validation_setup');
 
-				// Special behaviour for a select
-					var tagName = $this.prop("tagName");
+			// Special behaviour for a select
+				var tagName = $this.prop("tagName");
 
-					if (tagName === 'SELECT' && $this.data('required'))
+				if (tagName === 'SELECT' && $this.data('required'))
+				{
+					var $chzn = $this.next('.chzn-container') || false;
+					var $chzn = $this.parent().find('.chzn-container') || false;
+
+					if ($chzn.length)
 					{
-						var $chzn = $this.next('.chzn-container') || false;
-						var $chzn = $this.parent().find('.chzn-container') || false;
+						$chzn.removeClass('error');
+						$chzn.removeClass('validated');
+					}
+					$this.parent().removeClass('error');
+
+					if (!$this.val().length)
+					{
+						$this.addClass('error');
 
 						if ($chzn.length)
 						{
-							$chzn.removeClass('error');
-							$chzn.removeClass('validated');
-						}
-						$this.parent().removeClass('error');
-
-						if (!$this.val().length)
-						{
-							$this.addClass('error');
-
-							if ($chzn.length)
-							{
-								$chzn.addClass('error');
-							}
-							else
-							{
-								$this.parent().addClass('error');
-							}
+							$chzn.addClass('error');
 						}
 						else
 						{
-							$this.addClass('validated');
-
-							if ($chzn.length)
-							{
-								$chzn.addClass('validated');
-							}
-
+							$this.parent().addClass('error');
 						}
-						allowSubmit();
-						return;
 					}
+					else
+					{
+						$this.addClass('validated');
+
+						if ($chzn.length)
+						{
+							$chzn.addClass('validated');
+						}
+
+					}
+					allowSubmit();
+					return;
+				}
 
 				// Do not run if nothing was changed in the field
 				var previous_value = $this.data('previous_value');
