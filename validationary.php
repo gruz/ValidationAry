@@ -399,37 +399,43 @@ else
 			}
 			else
 			{
-				$subform_selectors = array_map('trim', explode(PHP_EOL, $rule->subform_selectors));
 
-				$thereAreSubforms = true;
-
-				while ($thereAreSubforms)
+				if(!empty($rule->subform_selectors))
 				{
-					$thereAreSubforms = false;
+					$subform_selectors = array_map('trim', explode(PHP_EOL, $rule->subform_selectors));
 
-					$subforms = array();
+					$thereAreSubforms = true;
 
-					foreach ($subform_selectors as $subform_selector)
+					while ($thereAreSubforms)
 					{
-						$xpath = '//field[@type="' . $subform_selector . '"]';
-						$subforms = array_merge($subforms, $form->getXML()->xpath($xpath));
-					}
+						$thereAreSubforms = false;
 
-					if (!empty($subforms))
-					{
-						$thereAreSubforms = true;
-					}
+						$subforms = array();
 
-					foreach ($subforms as $i => $subFormField)
+						foreach ($subform_selectors as $subform_selector)
 						{
-						$subformPath = JPATH_ROOT . '/' . $subFormField['formsource'];
+							// This works with PHP 5, but not with PHP 7. Max Manets fixed.
+							// ~ $xpath    = '//field[@type="' . $subform_selector . '"]';
+							$xpath    = '//field[type="' . $subform_selector . '"]';
+							$subforms = array_merge($subforms, $form->getXML()->xpath($xpath));
+						}
+
+						if (!empty($subforms))
+						{
+							$thereAreSubforms = true;
+						}
+
+						foreach ($subforms as $i => $subFormField)
+						{
+							$subformPath      = JPATH_ROOT . '/' . $subFormField['formsource'];
 							$subfromAsElement = new SimpleXMLElement($subformPath, null, true);
-						$wrapperElement = new SimpleXMLElement('<fields name="' . $subFormField['name'] . '" />');
-						$this->_addNode($wrapperElement, $subfromAsElement);
+							$wrapperElement   = new SimpleXMLElement('<fields name="' . $subFormField['name'] . '" />');
+							$this->_addNode($wrapperElement, $subfromAsElement);
 							$parentElement = $subFormField->xpath("..")[0];
-						$this->_addNode($parentElement, $wrapperElement);
-						unset($subFormField->{0});
-						continue;
+							$this->_addNode($parentElement, $wrapperElement);
+							unset($subFormField->{0});
+							continue;
+						}
 					}
 				}
 

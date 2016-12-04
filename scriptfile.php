@@ -17,6 +17,11 @@ if (!class_exists('ScriptAry'))
 	include dirname(__FILE__) . '/scriptary.php';
 }
 
+if (!class_exists('ScriptAry'))
+{
+	include dirname(__FILE__) . '/scriptary.php';
+}
+
 /**
  * Installer script
  *
