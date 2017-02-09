@@ -7,10 +7,20 @@
 	<creationDate>2017-02-09</creationDate>
 	<copyright>Copyright (C) 2004-2017 Gruz All rights reserved.</copyright>
 	<license>GNU General Public License</license>
-	<version>0.0.23</version>
+	<version>0.0.24</version>
 	<description>PLG_SYSTEM_VALIDATIONARY_FIELD_DESC</description>
 	<files>
 	<folder>css</folder><folder>extensions</folder><folder>form</folder><folder>images</folder><folder>js</folder><folder>language</folder><folder>model</folder><filename>README.md</filename><filename>index.html</filename><filename>scriptary.php</filename><filename>scriptfile.php</filename><filename plugin="validationary">validationary.php</filename></files>
+
+	<media destination="plg_system_validationary" folder=".">
+		<folder>css</folder>
+		<folder>js</folder>
+		<!--
+		<folder>images</folder>
+		!-->
+	</media>
+
+
 	<config>
 
 		<fields name="params">
