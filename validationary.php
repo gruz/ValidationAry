@@ -210,8 +210,12 @@ else
 
 			// ?h='.md5(dirname(__FILE__).'/js/ajax.js') makes sure that the JS is reloaded. After a plugin update Joomla may use browser cached JS or CSS.
 			// ~ $doc->addScript($path_to_assets . '/js/ajax.js?h=' . md5_file(dirname(__FILE__) . '/js/ajax.js'));
-			$this->_addJSorCSS($path_to_assets . 'js/ajax.js');
-			$this->_addJSorCSS($path_to_assets . 'css/validationary.css');
+
+			// ~ $this->_addJSorCSS($path_to_assets . 'js/ajax.js');
+			self::addJSorCSS('ajax.js');
+
+			// ~ $this->_addJSorCSS($path_to_assets . 'css/validationary.css');
+			self::addJSorCSS('validationary.css');
 
 			if ($this->params->get('fontawesome', 'included') == 'include')
 			{
@@ -399,8 +403,7 @@ else
 			}
 			else
 			{
-
-				if(!empty($rule->subform_selectors))
+				if (!empty($rule->subform_selectors))
 				{
 					$subform_selectors = array_map('trim', explode(PHP_EOL, $rule->subform_selectors));
 
