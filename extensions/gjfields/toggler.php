@@ -47,6 +47,7 @@ class GJFieldsFormFieldToggler extends GJFieldsFormField
 	 */
 	protected function getLabel()
 	{
+		/*
 		if (!isset($GLOBALS[$this->type . '_initialized']))
 		{
 			$GLOBALS[$this->type . '_initialized'] = true;
@@ -65,6 +66,7 @@ class GJFieldsFormFieldToggler extends GJFieldsFormField
 			// $scriptname = $path_to_assets.'js/' . $this->type.'.js';
 			// $doc->addScript($scriptname);
 		}
+		*/
 	}
 
 	/**

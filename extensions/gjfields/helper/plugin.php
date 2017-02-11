@@ -48,12 +48,6 @@ class JPluginGJFields extends JPlugin
 		$this->plg_path_relative = '/plugins/' . $this->plg_type . '/' . $this->plg_name . '/';
 		$this->plg_path = JPATH_PLUGINS . '/' . $this->plg_type . '/' . $this->plg_name . '/';
 
-		static::$vars['plg_name'] = $this->plg_name;
-		static::$vars['plg_type'] = $this->plg_type;
-		static::$vars['plg_full_name'] = $this->plg_full_name;
-		static::$vars['plg_path_relative'] = $this->plg_path_relative;
-		static::$vars['plg_path'] = $this->plg_path;
-
 		// Is used for building joomfish links
 		$this->langShortCode = null;
 		$this->default_lang = JComponentHelper::getParams('com_languages')->get('site');
@@ -516,13 +510,8 @@ class JPluginGJFields extends JPlugin
 	 *
 	 * @return   void
 	 */
-	public static function addJSorCSS($path, $extension = false, $debug = false)
+	public static function addJSorCSS($path, $extension, $debug = false)
 	{
-		if (!$extension && isset(static::$vars['plg_full_name']))
-		{
-			$extension = static::$vars['plg_full_name'];
-		}
-
 		$path = $extension . '/' . $path;
 
 		$path_parts = pathinfo($path);
@@ -552,14 +541,35 @@ class JPluginGJFields extends JPlugin
 			return;
 		}
 
-		if (isset(static::$vars['plg_path_relative']))
+		if (!$extension && isset(static::$vars['plg_path_relative']))
 		{
 			$path = static::$vars['plg_path_relative'];
+		}
+		else
+		{
+			$extension = explode('_', $extension);
+
+			switch ($extension[0])
+			{
+				case 'plg':
+					$path = '/plugins/' . $extension[1] . '/' . $extension[2];
+					break;
+				case 'lib':
+					$path = '/libraries/' . $extension[1];
+					break;
+				default :
+					break;
+			}
+
+			$path .= '/';
+
 		}
 
 		$path .= $path_parts['extension'] . '/' . $path_parts['basename'];
 
 		$doc = JFactory::getDocument();
+		$hash = md5_file(JPATH_ROOT . $path);
+		$path .= '?h=' . $hash;
 
 		switch ($path_parts['extension'])
 		{

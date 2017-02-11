@@ -46,26 +46,13 @@ class GJFieldsFormFieldVersion extends GJFieldsFormField
 	{
 		$return = '';
 
+		/*
 		if (version_compare(JVERSION, '3.0', 'ge'))
 		{
 			// Add CSS and JS once, define base global flag - runc only once
 			if (!isset($GLOBALS[$this->type . '_initialized']))
 			{
 				$path_to_assets = JURI::root() . 'libraries/gjfields/';
-				/*
-				$GLOBALS[$this->type . '_initialized'] = true;
-				// It's my development need. If I use the same file for developing J2.5 and J3.0
-				// I cannot properly determine the path, so I assume it's a default one (else)
-				if (strpos(__DIR__,JPATH_SITE)) {
-					$baseurl = str_replace('administrator/','',JURI::base());
-					$path_to_assets = JPath::clean(str_replace($baseurl,'',$baseurl . str_replace(JPATH_SITE,'',__DIR__).'/'));
-				}
-				else
-			{
-					$path_to_assets = JURI::root() . 'libraries/gjfields/';
-
-				}
-				*/
 
 				$scriptname = $path_to_assets . 'js/' . JString::strtolower($this->type) . '.js';
 				$doc = JFactory::getDocument();
@@ -77,6 +64,7 @@ class GJFieldsFormFieldVersion extends GJFieldsFormField
 				. '" value="'
 				. htmlspecialchars($this->value, ENT_COMPAT, 'UTF-8') . '"' . ' />';
 		}
+		*/
 
 		$xml = $this->def('xml');
 

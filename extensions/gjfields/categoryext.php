@@ -37,12 +37,12 @@ class GJFieldsFormFieldCategoryext extends JFormFieldCategory
 	 *
 	 * @since   11.1
 	 */
-	public function getOptions()
+	public function getOptions($flag = false)
 	{
-				// Due to inheritance the function can be called twice. To avoid this let's cache
+		// Due to inheritance the function can be called twice. To avoid we use the $flag parameter and static $options
 		static $options = false;
 
-		if ($options !== false)
+		if (!$flag)
 		{
 			return $options;
 		}
@@ -213,7 +213,7 @@ class GJFieldsFormFieldCategoryext extends JFormFieldCategory
 	 */
 	protected function getInput()
 	{
-		$options = (array) $this->getOptions();
+		$options = (array) $this->getOptions(true);
 
 		if (empty($options))
 		{

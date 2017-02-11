@@ -212,10 +212,10 @@ else
 			// ~ $doc->addScript($path_to_assets . '/js/ajax.js?h=' . md5_file(dirname(__FILE__) . '/js/ajax.js'));
 
 			// ~ $this->_addJSorCSS($path_to_assets . 'js/ajax.js');
-			self::addJSorCSS('ajax.js');
+			self::addJSorCSS('ajax.js', $this->plg_full_name);
 
 			// ~ $this->_addJSorCSS($path_to_assets . 'css/validationary.css');
-			self::addJSorCSS('validationary.css');
+			self::addJSorCSS('validationary.css', $this->plg_full_name);
 
 			if ($this->params->get('fontawesome', 'included') == 'include')
 			{

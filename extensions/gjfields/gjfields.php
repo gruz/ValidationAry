@@ -16,6 +16,8 @@ defined('_JEXEC') or die();
  */
 class GJFieldsFormField extends JFormField
 {
+	static public $debug = false;
+	static public $lib_name = 'lib_gjfields';
 	/**
 	 * Constructor
 	 *
@@ -33,39 +35,32 @@ class GJFieldsFormField extends JFormField
 		{
 			$app->set($this->type . '_initialized', true);
 
-			$url_to_assets = JURI::root() . '/libraries/gjfields/';
 			$path_to_assets = JPATH_ROOT . '/libraries/gjfields/';
 			$doc = JFactory::getDocument();
 
-			$cssname = $url_to_assets . 'css/common.css';
 			$cssname_path = $path_to_assets . 'css/common.css';
 
 			if (file_exists($cssname_path))
 			{
-				$doc->addStyleSheet($cssname);
+				JPluginGJFields::addJSorCSS('common.css', static::$lib_name, static::$debug);
 			}
 
 			$this->type = JString::strtolower($this->type);
 
-			$cssname = $url_to_assets . 'css/' . $this->type . '.css';
 			$cssname_path = $path_to_assets . 'css/' . $this->type . '.css';
 
 			if (file_exists($cssname_path))
 			{
-				$doc->addStyleSheet($cssname);
+				JPluginGJFields::addJSorCSS($this->type . '.css', static::$lib_name, static::$debug);
 			}
 
-			$jversion = new JVersion;
-			$common_script = $url_to_assets . 'js/script.js?v=' . $jversion->RELEASE;
+			JPluginGJFields::addJSorCSS('script.js', static::$lib_name, static::$debug);
 
-			$doc->addScript($common_script);
-
-			$scriptname = $url_to_assets . 'js/' . $this->type . '.js?v=' . $this->_getGJFieldsVersion();
 			$scriptname_path = $path_to_assets . 'js/' . $this->type . '.js';
 
 			if (file_exists($scriptname_path))
 			{
-				$doc->addScript($scriptname);
+				JPluginGJFields::addJSorCSS($this->type . '.js', static::$lib_name, static::$debug);
 			}
 		}
 
@@ -91,10 +86,10 @@ class GJFieldsFormField extends JFormField
 	 * A cap
 	 *
 	 * @return   void
-	 */
 	public function getInput()
 	{
 	}
+	 */
 
 	/**
 	 * Gets a default value for a field
