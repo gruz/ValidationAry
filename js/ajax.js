@@ -13,6 +13,14 @@ jQuery(document).ready(function($){
 
 	var debug = true;
 	var debug = false;
+
+	if (Joomla.optionsStorage === null)
+	{
+		var Options = Joomla.getOptions('validationary');
+
+		Joomla.optionsStorage = {'validationary':Options};
+	}
+
 if (debug) console.log(Joomla.optionsStorage.validationary);
 
 	// Object to share our data between JQuery blocks

@@ -4,10 +4,10 @@
 	<author>Gruz</author>
 	<authorEmail>arygroup@gmail.com</authorEmail>
 	<authorUrl>http://gruz.org.ua/extensions/validationary.html</authorUrl>
-	<creationDate>2017-02-11</creationDate>
+	<creationDate>2017-04-27</creationDate>
 	<copyright>Copyright (C) 2004-2017 Gruz All rights reserved.</copyright>
 	<license>GNU General Public License</license>
-	<version>0.0.25</version>
+	<version>0.0.26</version>
 	<description>PLG_SYSTEM_VALIDATIONARY_FIELD_DESC</description>
 	<files>
 	<folder>css</folder><folder>extensions</folder><folder>form</folder><folder>images</folder><folder>js</folder><folder>language</folder><folder>model</folder><filename>README.md</filename><filename>index.html</filename><filename>scriptary.php</filename><filename>scriptfile.php</filename><filename plugin="validationary">validationary.php</filename></files>
